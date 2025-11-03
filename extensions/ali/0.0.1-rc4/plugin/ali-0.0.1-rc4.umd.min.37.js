@@ -1,0 +1,2 @@
+(("undefined"!==typeof self?self:this)["webpackChunkali_0_0_1_rc4"]=("undefined"!==typeof self?self:this)["webpackChunkali_0_0_1_rc4"]||[]).push([[37],{9037:function(e){const l=[{ali:{label:"Alibaba Cloud",cloudcredential:{accessKeyID:{label:"Access Key ID",placeholder:"Your Ali Cloud Access Key ID"},accessKeySecret:{label:"Access Key Secret",placeholder:"Your Ali Cloud Access Key Secret"}},import:{label:"Cluster to import"}},cluster:{provider:{alibaba:"Alibaba Cloud"}}}];e.exports=l.length<=1?l[0]:l}}]);
+//# sourceMappingURL=ali-0.0.1-rc4.umd.min.37.js.map
