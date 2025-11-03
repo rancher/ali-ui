@@ -1,0 +1,10 @@
+plugin/ali-0.0.1-rc1.umd.min.211.js
+plugin/ali-0.0.1-rc1.umd.min.211.js.map
+plugin/ali-0.0.1-rc1.umd.min.37.js
+plugin/ali-0.0.1-rc1.umd.min.37.js.map
+plugin/ali-0.0.1-rc1.umd.min.cloud-credential.js
+plugin/ali-0.0.1-rc1.umd.min.cloud-credential.js.map
+plugin/ali-0.0.1-rc1.umd.min.js
+plugin/ali-0.0.1-rc1.umd.min.js.map
+plugin/img/icon.a4745e82.svg
+plugin/package.json
