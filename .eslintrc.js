@@ -2,233 +2,170 @@ module.exports = {
   env: {
     jest:                        true,
     'vue/setup-compiler-macros': true,
-    browser: true,
-    node:    true
+    browser:                     true,
+    node:                        true,
   },
   globals: {
     NodeJS: true,
-    Timer:  true
+    Timer:  true,
   },
-  plugins: [
-    'jest',
-    '@typescript-eslint',
-    'local-rules'
-  ],
+  plugins: ['jest', '@typescript-eslint'],
   extends: [
     'standard',
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     '@vue/standard',
-    '@vue/typescript/recommended',
+    // "@vue/typescript/recommended",
     'plugin:vue/vue3-recommended',
     'plugin:cypress/recommended',
-    'plugin:local-rules/all'
+    // "plugin:local-rules/all",
   ],
   rules: {
     'semi-spacing':          'off',
     'space-in-parens':       'off',
     'array-bracket-spacing': 'warn',
     'arrow-parens':          'warn',
-    'arrow-spacing':         [
-      'warn',
-      {
-        before: true,
-        after:  true
-      }
-    ],
-    'block-spacing': [
-      'warn',
-      'always'
-    ],
-    'brace-style': [
-      'warn',
-      '1tbs'
-    ],
-    'comma-dangle': [
-      'warn',
-      'only-multiline'
-    ],
-    'comma-spacing': 'warn',
-    indent:          [
-      'warn',
-      2
-    ],
-    'keyword-spacing':          'warn',
-    'newline-per-chained-call': [
-      'warn',
-      { ignoreChainWithDepth: 4 }
-    ],
-    'no-trailing-spaces': 'warn',
-    'func-call-spacing':  [
-      'warn',
-      'never'
-    ],
-    'wrap-iife':                   'off',
-    'lines-between-class-members': [
-      'warn',
-      'always',
-      { exceptAfterSingleLine: true }
-    ],
-    'multiline-ternary': [
-      'warn',
-      'never'
-    ],
-    'no-whitespace-before-property': 'warn',
-    'object-curly-spacing':          [
-      'warn',
-      'always'
-    ],
-    'object-property-newline': 'warn',
-    'object-shorthand':        'warn',
-    'padded-blocks':           [
-      'warn',
-      'never'
-    ],
-    'quote-props':         'warn',
-    'rest-spread-spacing': 'warn',
-    semi:                  [
-      'warn',
-      'always'
-    ],
-    'space-before-function-paren': [
-      'warn',
-      'never'
-    ],
-    'space-infix-ops':        'warn',
-    'spaced-comment':         'warn',
-    'switch-colon-spacing':   'warn',
-    'template-curly-spacing': [
-      'warn',
-      'always'
-    ],
-    'yield-star-spacing': [
-      'warn',
-      'both'
-    ],
-    'key-spacing': [
+    'key-spacing':           [
       'warn',
       {
         align: {
           beforeColon: false,
           afterColon:  true,
           on:          'value',
-          mode:        'strict'
+          mode:        'minimum',
         },
         multiLine: {
           beforeColon: false,
-          afterColon:  true
-        }
-      }
+          afterColon:  true,
+        },
+      },
     ],
-    'object-curly-newline': [
+    'arrow-spacing': [
+      'warn',
+      {
+        before: true,
+        after:  true,
+      },
+    ],
+    'block-spacing':               ['warn', 'always'],
+    'brace-style':                 ['warn', '1tbs'],
+    'comma-dangle':                ['warn', 'only-multiline'],
+    'comma-spacing':               'warn',
+    indent:                        ['warn', 2],
+    'keyword-spacing':             'warn',
+    'newline-per-chained-call':    ['warn', { ignoreChainWithDepth: 4 }],
+    'no-trailing-spaces':          'warn',
+    'func-call-spacing':           ['warn', 'never'],
+    'wrap-iife':                   'off',
+    'lines-between-class-members': [
+      'warn',
+      'always',
+      { exceptAfterSingleLine: true },
+    ],
+    'multiline-ternary':             ['warn', 'never'],
+    'no-whitespace-before-property': 'warn',
+    'object-curly-spacing':          ['warn', 'always'],
+    'object-property-newline':       'warn',
+    'object-shorthand':              'warn',
+    'padded-blocks':                 ['warn', 'never'],
+    'quote-props':                   'warn',
+    'rest-spread-spacing':           'warn',
+    semi:                            ['warn', 'always'],
+    'space-before-function-paren':   ['warn', 'never'],
+    'space-infix-ops':               'warn',
+    'spaced-comment':                'warn',
+    'switch-colon-spacing':          'warn',
+    'template-curly-spacing':        ['warn', 'always'],
+    'yield-star-spacing':            ['warn', 'both'],
+    'object-curly-newline':          [
       'warn',
       {
         ObjectExpression: {
           multiline:     true,
-          minProperties: 3
+          minProperties: 3,
         },
         ObjectPattern: {
           multiline:     true,
-          minProperties: 4
+          minProperties: 4,
         },
         ImportDeclaration: {
           multiline:     true,
-          minProperties: 5
+          minProperties: 5,
         },
         ExportDeclaration: {
           multiline:     true,
-          minProperties: 3
-        }
-      }
+          minProperties: 3,
+        },
+      },
     ],
     'padding-line-between-statements': [
       'warn',
       {
         blankLine: 'always',
         prev:      '*',
-        next:      'return'
+        next:      'return',
       },
       {
         blankLine: 'always',
         prev:      'function',
-        next:      'function'
+        next:      'function',
       },
       {
         blankLine: 'always',
-        prev:      [
-          'const',
-          'let',
-          'var'
-        ],
-        next: '*'
+        prev:      ['const', 'let', 'var'],
+        next:      '*',
       },
       {
         blankLine: 'any',
-        prev:      [
-          'const',
-          'let',
-          'var'
-        ],
-        next: [
-          'const',
-          'let',
-          'var'
-        ]
-      }
+        prev:      ['const', 'let', 'var'],
+        next:      ['const', 'let', 'var'],
+      },
     ],
     quotes: [
       'warn',
       'single',
       {
         avoidEscape:           true,
-        allowTemplateLiterals: true
-      }
+        allowTemplateLiterals: true,
+      },
     ],
     'space-unary-ops': [
       'warn',
       {
         words:    true,
-        nonwords: false
-      }
+        nonwords: false,
+      },
     ],
-    'vue/one-component-per-file':       'off',
-    'vue/no-deprecated-slot-attribute': 'off',
-    'vue/require-explicit-emits':       'error',
-    'vue/v-on-event-hyphenation':       'off',
-    'jest/no-commented-out-tests': 'off',
-    'jest/no-disabled-tests':      'off',
-    'dot-notation':                'off',
-    'generator-star-spacing':      'off',
-    'guard-for-in':                'off',
-    'linebreak-style':             'off',
-    'new-cap':                     'off',
-    'no-empty':                    'off',
-    'no-extra-boolean-cast':       'off',
-    'no-new':                      'off',
-    'no-plusplus':                 'off',
-    'no-useless-escape':           'off',
-    'nuxt/no-cjs-in-config':       'off',
-    strict:                        'off',
-    'unicorn/no-new-buffer':       'off',
-    'vue/no-unused-components':    'warn',
-    curly:                         'warn',
-    eqeqeq:                        'warn',
-    'implicit-arrow-linebreak':    'warn',
-    'no-caller':                   'warn',
-    'no-cond-assign':              [
-      'warn',
-      'except-parens'
-    ],
-    'no-console':                      'warn',
-    'no-debugger':                     'warn',
-    'no-eq-null':                      'warn',
-    'no-eval':                         'warn',
-    'no-undef':                        'warn',
-    'no-unused-vars':                  'warn',
-    'no-redeclare':                    'off',
-    '@typescript-eslint/no-redeclare': [
-      'error'
-    ],
+    'vue/require-explicit-emits':                 'error',
+    'jest/no-commented-out-tests':                'off',
+    'jest/no-disabled-tests':                     'off',
+    'dot-notation':                               'off',
+    'generator-star-spacing':                     'off',
+    'guard-for-in':                               'off',
+    'linebreak-style':                            'off',
+    'new-cap':                                    'off',
+    'no-empty':                                   'off',
+    'no-extra-boolean-cast':                      'off',
+    'no-new':                                     'off',
+    'no-plusplus':                                'off',
+    'no-useless-escape':                          'off',
+    'nuxt/no-cjs-in-config':                      'off',
+    strict:                                       'off',
+    'unicorn/no-new-buffer':                      'off',
+    'vue/no-unused-components':                   'warn',
+    curly:                                        'warn',
+    eqeqeq:                                       'warn',
+    'implicit-arrow-linebreak':                   'warn',
+    'no-caller':                                  'warn',
+    'no-cond-assign':                             ['warn', 'except-parens'],
+    'no-console':                                 'warn',
+    'no-debugger':                                'warn',
+    'no-eq-null':                                 'warn',
+    'no-eval':                                    'warn',
+    'no-undef':                                   'warn',
+    'no-unused-vars':                             'warn',
+    'no-redeclare':                               'off',
+    '@typescript-eslint/no-redeclare':            ['error'],
     'prefer-arrow-callback':                      'warn',
     'prefer-template':                            'warn',
     'vue/order-in-components':                    'off',
@@ -255,36 +192,30 @@ module.exports = {
   },
   overrides: [
     {
-      files: [
-        '**/*.{js,ts,vue}'
-      ],
+      files: ['**/*.{js,ts,vue}'],
       rules: {
         '@typescript-eslint/no-empty-function': 'off',
         '@typescript-eslint/ban-types':         'off',
         'vue/require-toggle-inside-transition': 'off', // Introduced with new linting version 9.32.0
-      }
+      },
     },
     {
       files: [
         '**/*.test.{js,ts}',
         '**/__tests__/**/*.{js,ts}',
-        '**/__mocks__/**/*.{js,ts}'
+        '**/__mocks__/**/*.{js,ts}',
       ],
       rules: {
         '@typescript-eslint/no-empty-function':              'off',
         '@typescript-eslint/no-non-null-assertion':          'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
-        'jest/prefer-expect-assertions':                     'off'
+        'jest/prefer-expect-assertions':                     'off',
       },
-      extends: [
-        'plugin:jest/all'
-      ]
+      extends: ['plugin:jest/all'],
     },
     {
-      files: [
-        '**/*.{js,vue}'
-      ],
-      rules: { '@typescript-eslint/explicit-module-boundary-types': 'off' }
+      files: ['**/*.{js,vue}'],
+      rules: { '@typescript-eslint/explicit-module-boundary-types': 'off' },
     },
     {
       files: ['*.d.ts'],
@@ -294,38 +225,29 @@ module.exports = {
       },
     },
     {
-      files: [
-        '*.js'
-      ],
+      files: ['*.js'],
       rules: {
         'prefer-regex-literals':                'off',
         'vue/component-definition-name-casing': 'off',
         'no-unreachable-loop':                  'off',
-        'computed-property-spacing':            'off'
+        'computed-property-spacing':            'off',
       },
     },
     {
-      files: [
-        'docusaurus/**/*.{js,ts}'
-      ],
-      rules: { 'no-use-before-define': 'off' }
+      files: ['docusaurus/**/*.{js,ts}'],
+      rules: { 'no-use-before-define': 'off' },
     },
     {
-      files: [
-        '**/*.vue'
-      ],
+      files: ['**/*.vue'],
       rules: {
-        'vue/no-v-html':   'error',
-        'vue/html-indent': [
-          'error',
-          2
-        ],
+        'vue/no-v-html':                    'error',
+        'vue/html-indent':                  ['error', 2],
         'vue/html-closing-bracket-newline': [
           'error',
           {
             singleline: 'never',
-            multiline:  'always'
-          }
+            multiline:  'always',
+          },
         ],
         'vue/html-closing-bracket-spacing': 2,
         'vue/html-end-tags':                2,
@@ -336,55 +258,46 @@ module.exports = {
             html: {
               void:      'never',
               normal:    'always',
-              component: 'always'
+              component: 'always',
             },
             svg:  'always',
-            math: 'always'
-          }
+            math: 'always',
+          },
         ],
         'vue/max-attributes-per-line': [
           'error',
           {
             singleline: { max: 1 },
-            multiline:  { max: 1 }
-          }
-        ]
-      }
+            multiline:  { max: 1 },
+          },
+        ],
+      },
     },
     {
-      files: [
-        '**/shell/utils/**/*.{js,ts}',
-        '**/shell/scripts/**/*.{js,ts}'
-      ],
+      files: ['**/shell/utils/**/*.{js,ts}', '**/shell/scripts/**/*.{js,ts}'],
       rules: {
         '@typescript-eslint/no-empty-function': 'off',
-        '@typescript-eslint/no-var-requires':   'off'
-      }
+        '@typescript-eslint/no-var-requires':   'off',
+      },
     },
     {
-      files: [
-        '**/*.{js,ts,vue}'
-      ],
+      files: ['**/*.{js,ts,vue}'],
       rules: {
         '@typescript-eslint/no-this-alias':   'off',
-        '@typescript-eslint/no-explicit-any': 'off'
-      }
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
     },
     {
-      files: [
-        '**/{harvester,harvester-manager}/**/*.{js,ts,vue}'
-      ],
+      files: ['**/{harvester,harvester-manager}/**/*.{js,ts,vue}'],
       rules: {
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         'vue/html-self-closing':                             'off',
-        'vue/no-v-html':                                     'error'
-      }
+        'vue/no-v-html':                                     'error',
+      },
     },
     {
-      files: [
-        '**/po/**/*.{js,ts,vue}'
-      ],
-      rules: { '@typescript-eslint/explicit-module-boundary-types': 'off' }
-    }
-  ]
+      files: ['**/po/**/*.{js,ts,vue}'],
+      rules: { '@typescript-eslint/explicit-module-boundary-types': 'off' },
+    },
+  ],
 };

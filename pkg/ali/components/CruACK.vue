@@ -1,0 +1,711 @@
+<script>
+import { mapGetters } from 'vuex';
+import { defineComponent } from 'vue';
+import semver from 'semver';
+import Loading from '@shell/components/Loading.vue';
+import CruResource from '@shell/components/CruResource.vue';
+import SelectCredential from '@shell/edit/provisioning.cattle.io.cluster/SelectCredential.vue';
+import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
+import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
+import Labels from '@shell/components/form/Labels';
+import Accordion from '@components/Accordion/Accordion.vue';
+import Banner from '@components/Banner/Banner.vue';
+import { _CREATE, _VIEW, _IMPORT } from '@shell/config/query-params';
+import CreateEditView from '@shell/mixins/create-edit-view';
+import FormValidation from '@shell/mixins/form-validation';
+import Tab from '@shell/components/Tabbed/Tab.vue';
+import Tabbed from '@shell/components/Tabbed/index.vue';
+import AgentConfiguration from '@shell/edit/provisioning.cattle.io.cluster/tabs/AgentConfiguration.vue';
+import Import from './Import.vue';
+import NodePool from './NodePool.vue';
+import Networking from './Networking.vue';
+import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor.vue';
+import cloneDeep from 'lodash/cloneDeep';
+import { NORMAN, MANAGEMENT } from '@shell/config/types';
+import { removeObject } from '@shell/utils/array';
+import { randomStr } from '@shell/utils/string';
+import { sortable } from '@shell/utils/version';
+import { sortBy } from '@shell/utils/sort';
+import { getAlibabaRegions, getAlibabaKubernetesVersions, getAllAlibabaInstanceTypes } from '../util/ack';
+import {
+  requiredInCluster,
+  clusterNameChars,
+  clusterNameStart,
+  clusterNameLength,
+} from '../util/validation';
+import { SETTING } from '@shell/config/settings';
+const DEFAULT_REGION = 'us-east-1';
+const DEFAULT_SERVICE_CIDR = '192.168.0.0/16';
+
+const importedDefaultAckConfig = {
+  clusterName:    '',
+  clusterId:      '',
+  imported:       true,
+  clusterType:    'ManagedKubernetes',
+  regionId:    DEFAULT_REGION,
+};
+
+export const defaultAckConfig = {
+  clusterName:          '',
+  imported:             false,
+  tags:                 {},
+  clusterType:          'ManagedKubernetes',
+  serviceCidr:          DEFAULT_SERVICE_CIDR,
+  snatEntry:            true,
+  endpointPublicAccess: true,
+  proxyMode:            'ipvs',
+  addons:               [
+    { name: 'terway-eniip' }
+  ],
+};
+
+const defaultCluster = {
+  labels:                              {},
+  annotations:                         {},
+  fleetAgentDeploymentCustomization: {
+    overrideAffinity:             {},
+    appendTolerations:            [],
+    overrideResourceRequirements: {}
+  },
+  clusterAgentDeploymentCustomization: {
+    overrideAffinity:             {},
+    appendTolerations:            [],
+    overrideResourceRequirements: {}
+  },
+};
+const importedDefaultCluster = {
+  labels:                  {},
+  annotations:             {},
+};
+
+export const DEFAULT_NODE_GROUP_CONFIG = {
+  name:          'nodePool-0',
+  instanceTypes: [
+    'ecs.g6.xlarge',
+    'ecs.g7.xlarge',
+    'ecs.u1-c1m4.xlarge',
+    'ecs.g8i.xlarge'
+  ],
+  systemDiskCategory: 'cloud_essd',
+  systemDiskSize:     20,
+  dataDisks:          [
+    {
+      category:  'cloud_essd',
+      size:      40,
+      encrypted: 'false'
+    }
+  ],
+  desiredSize:    3,
+  imageId:        'aliyun_3_x64_20G_alibase_20241218.vhd',
+  imageType:      'AliyunLinux3',
+  runtime:        'containerd',
+  runtimeVersion: '1.6.38',
+  vswitchIds:     [],
+
+  _isNewOrUnprovisioned: true,
+};
+
+export default defineComponent({
+  name:       'CruACK',
+  emits:      ['validationChanged', 'error'],
+  components: {
+    SelectCredential,
+    CruResource,
+    LabeledSelect,
+    LabeledInput,
+    ClusterMembershipEditor,
+    Labels,
+    Accordion,
+    Banner,
+    Loading,
+    Import,
+    Networking,
+    NodePool,
+    Tabbed,
+    Tab,
+    AgentConfiguration
+  },
+
+  mixins: [CreateEditView, FormValidation],
+
+  props: {
+    mode: {
+      type:    String,
+      default: _CREATE
+    },
+    value: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
+    }
+  },
+  data() {
+    return {
+      normanCluster:          { name: '', aliConfig: {} },
+      nodePools:              [],
+      membershipUpdate:       {},
+      locationOptions:        [],
+      allVersions:            [],
+      allImages:              {},
+      allInstanceTypes:       {},
+      loadingLocations:       false,
+      loadingVersions:        false,
+      loadingInstanceTypes:    false,
+      loadingImages:          false,
+      configUnreportedErrors: [],
+      configIsValid:          true,
+      zones:                  new Set(),
+      fvFormRuleSets:         this.isImport ? [
+        {
+          path:  'name',
+          rules: ['nameRequired', 'clusterNameChars', 'clusterNameStart', 'clusterNameLength'],
+        },
+        {
+          path:  'clusterName',
+          rules: ['importedName']
+        },
+      ] : [{
+        path:  'name',
+        rules: ['nameRequired', 'clusterNameChars', 'clusterNameStart', 'clusterNameLength'],
+      },
+      ],
+
+    };
+  },
+
+  created() {
+    const registerAfterHook = this.registerAfterHook ;
+
+    registerAfterHook(this.saveRoleBindings, 'save-role-bindings');
+  },
+
+  async fetch() {
+    const store = this.$store;
+
+    if (this.value.id) {
+      const liveNormanCluster = await this.value.findNormanCluster();
+
+      this.normanCluster = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
+    } else {
+      const base = !this.isImport ? defaultCluster : importedDefaultCluster ;
+
+      this.normanCluster = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER, ...base }, { root: true });
+    }
+    if (this.isImport) {
+      this.normanCluster.aliConfig = cloneDeep(importedDefaultAckConfig);
+    } else {
+      if (!this.normanCluster.aliConfig) {
+        this.normanCluster.aliConfig = { ...defaultAckConfig };
+      }
+      if (this.mode === _CREATE && (!this.normanCluster.aliConfig.nodePools || this.normanCluster.aliConfig.nodePools.length === 0)) {
+        const pool = cloneDeep(DEFAULT_NODE_GROUP_CONFIG);
+
+        pool._id = randomStr();
+        this.normanCluster.aliConfig.nodePools = [pool];
+      } else {
+        this.normanCluster.aliConfig.nodePools.forEach((pool) => {
+          pool['_id'] = pool.nodePoolId || randomStr();
+          pool['_isNewOrUnprovisioned'] = this.isNewOrUnprovisioned;
+          pool['_validation'] = {};
+        });
+      }
+      this.nodePools = this.normanCluster.aliConfig.nodePools;
+    }
+  },
+  watch: {
+    'config.alibabaCredentialSecret'(neu) {
+      if (neu) {
+        this.getLocations();
+        if (!this.isImport) {
+          this.getVersions();
+          this.getAllInstanceTypes();
+        }
+      }
+    },
+    'config.regionId'(neu) {
+      if (neu && !this.isImport) {
+        this.getVersions();
+        this.getAllInstanceTypes();
+      }
+    },
+  },
+  computed: {
+    ...mapGetters({ t: 'i18n/t' }),
+    CREATE() {
+      return _CREATE;
+    },
+
+    VIEW() {
+      return _VIEW;
+    },
+    supportedVersionRange() {
+      return this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.UI_SUPPORTED_K8S_VERSIONS)?.value;
+    },
+    fvExtraRules() {
+      return {
+        nameRequired:        requiredInCluster(this, 'nameNsDescription.name.label', 'normanCluster.name'),
+        clusterNameChars:    clusterNameChars(this),
+        clusterNameStart:    clusterNameStart(this),
+        clusterNameLength:   clusterNameLength(this),
+        importedName:        requiredInCluster(this, 'ali.import.label', 'config.clusterName')
+      };
+    },
+
+    isImport() {
+      return this.$route?.query?.mode === _IMPORT;
+    },
+    isNewOrUnprovisioned() {
+      return this.mode === _CREATE || !this.normanCluster?.aliStatus?.upstreamSpec;
+    },
+    hasCredential() {
+      return !!this.config?.alibabaCredentialSecret;
+    },
+    canManageMembers() {
+      return canViewClusterMembershipEditor(this.$store);
+    },
+    config: {
+      get() {
+        return this.normanCluster.aliConfig;
+      },
+      set(neu) {
+        this.normanCluster.aliConfig = neu;
+      }
+    },
+
+    // filter out versions outside ui-k8s-supported-versions-range global setting and versions < current version
+    // sort versions, descending
+    versionOptions() {
+      const validVersions = this.allVersions;
+
+      validVersions.forEach((v) => {
+        v.sort = sortable(v.value);
+      });
+
+      const sorted = sortBy(validVersions, 'sort', true); // Descending order
+
+      if (!this.config.kubernetesVersion) {
+        const firstValid = sorted.find((v) => !v.disabled);
+
+        this.config.kubernetesVersion = firstValid?.value;
+      }
+
+      return sorted;
+    },
+    allImagesForVersion() {
+      const imagesForVersion = this.allImages[this.config?.kubernetesVersion] || [];
+      const options = {};
+
+      imagesForVersion.forEach((image) => {
+        options[image.image_type] = {
+          imageType: image.image_type, imageId: image.image_id, label: image.image_name
+        };
+      });
+
+      return options;
+    }
+  },
+  methods: {
+    async getLocations() {
+      if (!this.isNewOrUnprovisioned) {
+        return;
+      }
+      this.loadingLocations = true;
+
+      const { alibabaCredentialSecret } = this.config;
+
+      try {
+        const res = await getAlibabaRegions(this.$store, alibabaCredentialSecret);
+
+        this.locationOptions = (res?.Regions?.Region || []).map((r) => {
+          return { value: r.RegionId, label: `${ r?.RegionId } - ${ r.LocalName }` };
+        });
+
+        if (this.locationOptions.find((r) => r.value === DEFAULT_REGION)) {
+          this.config.regionId = DEFAULT_REGION;
+        } else {
+          this.config.regionId = this.locationOptions[0]?.value;
+        }
+      } catch (err) {
+        const parsedError = err.error || '';
+        const errors = this.errors;
+
+        errors.push(this.t('ack.errors.regions', { e: parsedError || err }));
+      }
+      this.loadingLocations = false;
+    },
+    async getVersions() {
+      this.loadingVersions = true;
+
+      const { alibabaCredentialSecret, regionId } = this.config;
+
+      try {
+        const res = await getAlibabaKubernetesVersions(this.$store, alibabaCredentialSecret, regionId, this.isEdit );
+        const unprocessedVersions = (res || []).map((v) => {
+          return {
+            value: v.version, creatable: v.creatable, images: v.images
+          };
+        });
+
+        this.allVersions = this.processVersions(unprocessedVersions);
+      } catch (err) {
+        const parsedError = err.error || '';
+
+        this.errors.push(this.t('ack.errors.versions', { e: parsedError || err }));
+      }
+      this.loadingVersions = false;
+    },
+
+    processVersions(unprocessedVersions) {
+      const newAllImages = {};
+      const validVersions = (unprocessedVersions || []).reduce((versions, version) => {
+        const coerced = semver.coerce(version.value);
+
+        if (this.supportedVersionRange && !semver.satisfies(coerced, this.supportedVersionRange)) {
+          return versions;
+        }
+        if ((this.isCreate && version.creatable) || !this.isCreate) {
+          versions.push({ value: version.value, label: version.value });
+          newAllImages[version.value] = version.images;
+        }
+
+        return versions;
+      }, []);
+
+      this.allImages = newAllImages;
+
+      return validVersions;
+    },
+
+    cancelCredential() {
+      if ( this.$refs.cruresource ) {
+        (this.$refs.cruresource).emitOrRoute();
+      }
+    },
+    onMembershipUpdate(update) {
+      this['membershipUpdate'] = update;
+    },
+    async saveRoleBindings() {
+      if (this.membershipUpdate.save) {
+        await this.membershipUpdate.save(this.normanCluster.id);
+      }
+    },
+    async actuallySave() {
+      await this.normanCluster.save();
+
+      return await this.normanCluster.waitForCondition('InitialRolesPopulated');
+    },
+    setClusterName(name) {
+      this.normanCluster['name'] = name;
+
+      if (!this.isImport) {
+        this.config['clusterName'] = name;
+      }
+    },
+    removePool(i) {
+      const pool = this.nodePools[i];
+
+      if (pool._isNewOrUnprovisioned) {
+        removeObject(this.nodePools, pool);
+      }
+    },
+
+    addPool() {
+      const poolName = `nodePool-${ this.nodePools.length + 1 }`;
+      const _id = randomStr();
+      const neu = {
+        ...cloneDeep(DEFAULT_NODE_GROUP_CONFIG), name: poolName, _id, _isNewOrUnprovisioned: true, version: this.config.kubernetesVersion
+      };
+
+      this.nodePools.push(neu);
+
+      this.$nextTick(() => {
+        const pools = this.$refs.pools;
+
+        if ( pools && pools.select ) {
+          pools.select(poolName);
+        }
+      });
+    },
+    async getAllInstanceTypes() {
+      this.loadingInstanceTypes = true;
+      const { alibabaCredentialSecret, regionId } = this.config;
+
+      try {
+        this.allInstanceTypes = {};
+        let nextToken;
+
+        do {
+          const res = await getAllAlibabaInstanceTypes(this.$store, alibabaCredentialSecret, regionId, nextToken);
+          const fromRes = res?.InstanceTypes?.InstanceType || [];
+
+          fromRes.forEach((type) => {
+            if (type.InstanceTypeId) {
+              this.allInstanceTypes[type.InstanceTypeId] = {
+                instanceTypeFamily: type.InstanceTypeFamily,
+                cpu:                type.CpuCoreCount,
+                memory:             type.MemorySize,
+              };
+            }
+          });
+          nextToken = res?.NextToken;
+        } while (nextToken);
+      } catch (err) {
+        const parsedError = err.error || '';
+
+        this.errors.push(this.t('ack.errors.instanceTypes', { e: parsedError || err }));
+      }
+      this.loadingInstanceTypes = false;
+    },
+
+  }
+});
+</script>
+<template>
+  <Loading v-if="$fetchState.pending" />
+  <CruResource
+    v-else
+    ref="cruresource"
+    :resource="value"
+    :mode="mode"
+    :can-yaml="false"
+    :done-route="doneRoute"
+    :validation-passed="fvFormIsValid && configIsValid && !!config.regionId"
+    :errors="fvUnreportedValidationErrors"
+    @error="e=>errors=e"
+    @finish="save"
+  >
+    <div
+      v-if="hasCredential"
+      class="row mb-20"
+    >
+      <div class="col span-4">
+        <LabeledInput
+          :value="normanCluster.name"
+          :mode="mode"
+          label-key="generic.name"
+          required
+          :rules="fvGetAndReportPathRules('name')"
+          :disabled="!isCreate"
+          @update:value="setClusterName"
+        />
+      </div>
+      <div class="col span-4">
+        <LabeledInput
+          v-model:value="normanCluster.description"
+          :mode="mode"
+          label-key="nameNsDescription.description.label"
+          :placeholder="t('nameNsDescription.description.placeholder')"
+          :disabled="!isNewOrUnprovisioned"
+        />
+      </div>
+    </div>
+    <div class="row mb-20">
+      <div :class="hasCredential ? 'col span-4' : 'col span-12'">
+        <SelectCredential
+          v-model:value="config.alibabaCredentialSecret"
+          data-testid="cruack-select-credential"
+          :mode="mode === CREATE ? CREATE : VIEW"
+          provider="alibaba"
+          :default-on-cancel="true"
+          :showing-form="hasCredential"
+          :cancel="cancelCredential"
+        />
+      </div>
+      <div
+        v-if="hasCredential"
+        class="col span-4"
+      >
+        <LabeledSelect
+          v-model:value="config.regionId"
+          data-testid="cruack-regionId"
+          :mode="mode"
+          :options="locationOptions"
+          label-key="ack.location.label"
+          :loading="loadingLocations"
+          required
+          :rules="fvGetAndReportPathRules('regionId')"
+          :disabled="!isNewOrUnprovisioned"
+        />
+      </div>
+      <div
+        v-if="hasCredential && !isImport"
+        class="col span-4"
+      >
+        <LabeledSelect
+          v-model:value="config.kubernetesVersion"
+          data-testid="cruack-kubernetesversion"
+          :mode="mode"
+          :options="versionOptions"
+          label-key="ack.kubernetesVersion.label"
+          option-key="value"
+          option-label="label"
+          :loading="loadingVersions"
+          required
+          :disabled="!isNewOrUnprovisioned"
+        />
+      </div>
+    </div>
+    <div
+      v-if="hasCredential"
+      class="mt-10"
+      data-testid="cruack-form"
+    >
+      <Accordion
+        v-if="isImport"
+        :open-initially="true"
+        class="mb-20"
+        title-key="ack.accordions.cluster"
+      >
+        <Import
+          v-model:cluster-name="config.clusterName"
+          v-model:cluster-id="config.clusterId"
+          :region="config.regionId"
+          :credential="config.alibabaCredentialSecret"
+          :rules="{clusterName: fvGetAndReportPathRules('clusterName')}"
+          :mode="mode"
+          data-testid="cruack-import"
+          @error="e=>errors.push(e)"
+        />
+      </Accordion>
+      <div v-else>
+        <Accordion
+          :open-initially="true"
+          class="mb-20"
+          title-key="ack.accordions.networking"
+        >
+          <Networking
+            v-model:resource-group-id="config.resourceGroupId"
+            v-model:vpc-id="config.vpcId"
+            v-model:vswitch-ids="config.vswitchIds"
+            v-model:zone-ids="config.zoneIds"
+            v-model:snat-entry="config.snatEntry"
+            v-model:proxy-mode="config.proxyMode"
+            v-model:service-cidr="config.serviceCidr"
+            v-model:endpoint-public-access="config.endpointPublicAccess"
+            v-model:container-cidr="config.containerCidr"
+            v-model:pod-vswitch-ids="config.podVswitchIds"
+            v-model:addons="config.addons"
+            v-model:config-unreported-errors="configUnreportedErrors"
+            v-model:config-is-valid="configIsValid"
+            v-model:enable-network-policy="normanCluster.enableNetworkPolicy"
+            :config="config"
+            :value="value"
+            :mode="mode"
+            :is-new-or-unprovisioned="isNewOrUnprovisioned"
+            @error="e=>errors.push(e)"
+            @zone-changed="(val)=>zones=val"
+          />
+        </Accordion>
+        <div><h3>{{ t('ack.nodePools.title') }}</h3></div>
+        <Tabbed
+          ref="pools"
+          class="node-pools mb-20"
+          :side-tabs="true"
+          :show-tabs-add-remove="mode !== VIEW"
+          :use-hash="false"
+          @removeTab="removePool($event)"
+          @addTab="addPool()"
+        >
+          <Tab
+            v-for="(pool) in nodePools"
+            :key="pool._id"
+            :label="pool.name"
+            :name="`${pool.name || t('ack.nodePool.unnamed')}`"
+          >
+            <NodePool
+              :mode="mode"
+              :config="config"
+              :pool="pool"
+              :all-images="allImagesForVersion"
+              :all-instance-types="allInstanceTypes"
+              :loading-images="loadingImages"
+              :loading-instance-types="loadingInstanceTypes"
+              :zones="zones"
+            />
+          </Tab>
+        </Tabbed>
+      </div>
+      <Accordion
+        class="mb-20"
+        title-key="members.memberRoles"
+      >
+        <Banner
+          v-if="isEdit"
+          color="info"
+        >
+          {{ t('cluster.memberRoles.removeMessage') }}
+        </Banner>
+        <ClusterMembershipEditor
+          v-if="canManageMembers"
+          :mode="mode"
+          :parent-id="normanCluster.id ? normanCluster.id : null"
+          @membership-update="onMembershipUpdate"
+        />
+      </Accordion>
+      <Accordion
+        class="mb-20"
+        title-key="ack.accordions.labels"
+      >
+        <Labels
+          v-model:value="normanCluster"
+          :mode="mode"
+        />
+      </Accordion>
+      <Accordion
+        v-if="normanCluster.fleetAgentDeploymentCustomization ||
+          normanCluster.clusterAgentDeploymentCustomization"
+        class="mb-20"
+        title-key="ack.accordions.advanced"
+      >
+        <h4>{{ t('cluster.agentConfig.tabs.cluster') }}</h4>
+        <AgentConfiguration
+          v-if="normanCluster.clusterAgentDeploymentCustomization"
+          v-model:value="normanCluster.clusterAgentDeploymentCustomization"
+          data-testid="rke2-cluster-agent-config"
+          type="cluster"
+          :mode="mode"
+          :scheduling-customization-feature-enabled="false"
+          class="mb-20"
+        />
+        <h4>{{ t('cluster.agentConfig.tabs.fleet') }}</h4>
+        <AgentConfiguration
+          v-if="normanCluster.fleetAgentDeploymentCustomization"
+          v-model:value="normanCluster.fleetAgentDeploymentCustomization"
+          data-testid="rke2-fleet-agent-config"
+          type="fleet"
+          :mode="mode"
+        />
+      </Accordion>
+    </div>
+    <template
+      v-if="!hasCredential"
+      #form-footer
+    >
+      <div />
+    </template>
+  </CruResource>
+</template>
+
+<style lang="scss" scoped>
+.cru-ack-content-wrapper.no-credential {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  > div {
+    flex-grow: 1;
+    display: flex;
+    > .col {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+}
+
+.node-pools > .tab-container {
+  border-top-right-radius: 8px ;
+  border-bottom-right-radius: 8px ;
+}
+</style>
