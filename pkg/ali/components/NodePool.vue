@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent, PropType } from 'vue';
+import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
@@ -73,6 +73,12 @@ export default defineComponent({
     isView() {
       return this.mode === _VIEW;
     },
+    isEditingImported() {
+      return this.config.imported && !this.pool._isNewOrUnprovisioned;
+    },
+    showInstanceTypes(){
+      return this.pool.instanceTypes || this.pool._isNewOrUnprovisioned;
+    },
     systemDisk:{
       get() {
         return {category: this.pool.systemDiskCategory, size:this.pool.systemDiskSize };
@@ -118,7 +124,7 @@ export default defineComponent({
       <div class="col span-3">
         <LabeledInput
           v-model:value.number="pool.desiredSize"
-          :disabled="isView"
+          :disabled="isView || isEditingImported"
           type="number"
           :mode="mode"
           label-key="ack.nodePool.desiredSize.label"
@@ -143,7 +149,7 @@ export default defineComponent({
         />
       </div>
     </div>
-    <div class="col mb-30">
+    <div v-if="showInstanceTypes" class="col mb-30" >
       <InstanceType 
         v-model:value="pool.instanceTypes"
         :config="config"

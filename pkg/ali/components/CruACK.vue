@@ -34,6 +34,8 @@ import {
   clusterNameLength,
 } from '../util/validation';
 import { SETTING } from '@shell/config/settings';
+import { syncUpstreamConfig } from '@shell/utils/kontainer';
+
 const DEFAULT_REGION = 'us-east-1';
 const DEFAULT_SERVICE_CIDR = '192.168.0.0/16';
 
@@ -188,6 +190,9 @@ export default defineComponent({
       const liveNormanCluster = await this.value.findNormanCluster();
 
       this.normanCluster = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
+      if (!this.isNewOrUnprovisioned) {
+        syncUpstreamConfig('ali', this.normanCluster);
+      }
 
       // track original version on edit to ensure we don't offer k8s downgrades
       this.originalVersion = this.normanCluster?.aliConfig?.kubernetesVersion || '';
@@ -202,19 +207,19 @@ export default defineComponent({
       if (!this.normanCluster.aliConfig) {
         this.normanCluster.aliConfig = { ...defaultAckConfig };
       }
-      if (this.mode === _CREATE && (!this.normanCluster.aliConfig.nodePools || this.normanCluster.aliConfig.nodePools.length === 0)) {
+      if (this.mode === _CREATE && (!this.normanCluster?.aliConfig?.nodePools || this.normanCluster?.aliConfig?.nodePools.length === 0)) {
         const pool = cloneDeep(DEFAULT_NODE_GROUP_CONFIG);
 
         pool._id = randomStr();
         this.normanCluster.aliConfig.nodePools = [pool];
-      } else {
+      } else if (this.normanCluster.aliConfig.nodePools && this.normanCluster.aliConfig.nodePools.length > 0) {
         this.normanCluster.aliConfig.nodePools.forEach((pool) => {
           pool['_id'] = pool.nodePoolId || randomStr();
           pool['_isNewOrUnprovisioned'] = this.isNewOrUnprovisioned;
           pool['_validation'] = {};
         });
       }
-      this.nodePools = this.normanCluster.aliConfig.nodePools;
+      this.nodePools = this.normanCluster.aliConfig.nodePools || [];
     }
   },
   watch: {

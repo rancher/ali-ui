@@ -166,7 +166,7 @@ export default defineComponent({
     },
     instanceTypesList: {
       get() {
-        return this.instanceTypes.map((instanceType) => {
+        return (this.instanceTypes || []).map((instanceType) => {
           const fromDict = this.typesDictionary[instanceType];
 
           if (!fromDict) {

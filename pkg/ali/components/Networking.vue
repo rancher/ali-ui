@@ -163,9 +163,7 @@ export default defineComponent({
     this.getResourceGroups();
     this.getZones();
     this.getVPCs();
-    if ( this.isNewOrUnprovisioned) {
-      this.getVswitches();
-    }
+    this.getVswitches();
   },
 
   computed: {
@@ -240,7 +238,7 @@ export default defineComponent({
       const unformatted = this.vswitchIds || [];
 
       return unformatted.map((vswitchId) => {
-        return { value: vswitchId, label: this.allVSwitches[vswitchId]?.label || '' };
+        return { value: vswitchId, label: this.allVSwitches[vswitchId]?.label || vswitchId };
       });
     },
     vswitchIdOptions() {
@@ -336,29 +334,32 @@ export default defineComponent({
       handler(neu) {
         if (this.chooseVPC) {
           this.zonesChanged();
-
-          this.$emit('update:podVswitchIds', neu.length === 0 ? [] : [neu[0]]);
+          if (this.isNewOrUnprovisioned) {
+            this.$emit('update:podVswitchIds', neu.length === 0 ? [] : [neu[0]]);
+          }
         }
       },
       immediate: true
     },
     vpcId: {
       async handler(neu) {
-        if (doCidrOverlap(this.serviceCidr, this.allVPCs[neu]?.cidr)) {
-          const overlapWithDefault = doCidrOverlap(DEFAULT_SERVICE_CIDR, this.allVPCs[neu]?.cidr);
+        if (this.isNewOrUnprovisioned) {
+          if (doCidrOverlap(this.serviceCidr, this.allVPCs[neu]?.cidr)) {
+            const overlapWithDefault = doCidrOverlap(DEFAULT_SERVICE_CIDR, this.allVPCs[neu]?.cidr);
 
-          !overlapWithDefault ? this.$emit('update:serviceCidr', DEFAULT_SERVICE_CIDR) : this.$emit('update:serviceCidr', BACKUP_SERVICE_CIDR);
-        }
-        if (doCidrOverlap(this.containerCidr, this.allVPCs[neu]?.cidr)) {
-          this.$emit('update:containerCidr', '');
-        }
-        this.$emit('update:vswitchIds', []);
-        this.$emit('update:podVswitchIds', []);
-        if (this.chooseVPC) {
-          await this.getVswitches();
-          const firstVswitch = Object.keys(this.allVSwitches)[0];
+            !overlapWithDefault ? this.$emit('update:serviceCidr', DEFAULT_SERVICE_CIDR) : this.$emit('update:serviceCidr', BACKUP_SERVICE_CIDR);
+          }
+          if (doCidrOverlap(this.containerCidr, this.allVPCs[neu]?.cidr)) {
+            this.$emit('update:containerCidr', '');
+          }
+          this.$emit('update:vswitchIds', []);
+          this.$emit('update:podVswitchIds', []);
+          if (this.chooseVPC) {
+            await this.getVswitches();
+            const firstVswitch = Object.keys(this.allVSwitches)[0];
 
-          this.$emit('update:vswitchIds', !firstVswitch ? [] : [firstVswitch]);
+            this.$emit('update:vswitchIds', !firstVswitch ? [] : [firstVswitch]);
+          }
         }
       },
       immediate: true
@@ -439,6 +440,7 @@ export default defineComponent({
             label, cidr: vswitch.CidrBlock, zoneId: vswitch.ZoneId
           };
         });
+        this.zonesChanged();
       } catch (err) {
         const parsedError = err.error || '';
 
@@ -469,7 +471,7 @@ export default defineComponent({
 
       if (!this.chooseVPC) {
         zones = this.zoneIds;
-      } else if (this.vswitchIds) {
+      } else if (this.vswitchIds && this.allVSwitches && Object.keys(this.allVSwitches).length > 0) {
         this.vswitchIds.forEach((vswitchId) => {
           const vswitch = this.allVSwitches[vswitchId];
 
