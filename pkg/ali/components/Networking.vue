@@ -511,13 +511,13 @@ export default defineComponent({
     <div class="mb-10">
       <div class="row mb-10 mt-20">
         <div
-          v-if="isNewOrUnprovisioned"
           class="col span-4"
         >
           <p class="mb-10">
             {{ t('ack.networking.vpc.title') }}
           </p>
           <RadioGroup
+            v-if="isNewOrUnprovisioned"
             v-model:value="chooseVPC"
             name="subnet-mode"
             :mode="mode"
