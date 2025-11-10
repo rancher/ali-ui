@@ -211,7 +211,7 @@ export default defineComponent({
       const availableZones = this.localInstanceTypes?.AvailableZones?.AvailableZone || [];
 
       availableZones.forEach((zone) => {
-        const zoneAllowed = (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this.isNewOrUnprovisioned;
+        const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this.isNewOrUnprovisioned;
 
         if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
           const availableResources = zone.AvailableResources?.AvailableResource;
