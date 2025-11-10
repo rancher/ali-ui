@@ -190,7 +190,7 @@ export default defineComponent({
       },
       set(neu) {
         this.instanceTypes = neu.map((instanceType) => {
-          return instanceType.split('-')[0];
+          return instanceType.label.split(' - ')[0].trim();
         });
       }
     },
@@ -352,7 +352,7 @@ export default defineComponent({
   </p>
   <div class="row">
     <ArrayListOrdered
-      :value="instanceTypesList"
+      v-model:value="instanceTypesList"
       :mode="mode"
       :disabled="!isNewOrUnprovisioned"
       :types-dictionary="typesDictionary"

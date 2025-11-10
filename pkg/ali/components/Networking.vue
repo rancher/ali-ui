@@ -137,7 +137,7 @@ export default defineComponent({
       allAvailabilityZones:     [],
       allVPCs:                  {},
       allVSwitches:             {},
-      chooseVPC:                false,
+      chooseVPC:                !!this.vpcId,
       networkPlugin,
       fvFormRuleSets:             [
         {
@@ -281,12 +281,13 @@ export default defineComponent({
 
     'config.regionId': {
       handler() {
-        this.$emit('update:resourceGroupId', '');
-        this.$emit('update:vpcId', '');
-        this.$emit('update:vswitchIds', []);
-        this.$emit('update:podVswitchIds', []);
-        this.$emit('update:zoneIds', []);
-
+        if (this.isNewOrUnprovisioned) {
+          this.$emit('update:resourceGroupId', '');
+          this.$emit('update:vpcId', '');
+          this.$emit('update:vswitchIds', []);
+          this.$emit('update:podVswitchIds', []);
+          this.$emit('update:zoneIds', []);
+        }
         this.getResourceGroups();
         this.getZones();
       },
@@ -294,12 +295,13 @@ export default defineComponent({
     },
     'config.alibabaCredentialSecret': {
       handler() {
-        this.$emit('update:resourceGroupId', '');
-        this.$emit('update:vpcId', '');
-        this.$emit('update:vswitchIds', []);
-        this.$emit('update:podVswitchIds', []);
-        this.$emit('update:zoneIds', []);
-
+        if (this.isNewOrUnprovisioned) {
+          this.$emit('update:resourceGroupId', '');
+          this.$emit('update:vpcId', '');
+          this.$emit('update:vswitchIds', []);
+          this.$emit('update:podVswitchIds', []);
+          this.$emit('update:zoneIds', []);
+        }
         this.getResourceGroups();
         this.getZones();
       },
@@ -308,15 +310,17 @@ export default defineComponent({
     resourceGroupId: {
       async handler() {
         if (this.chooseVPC) {
-          this.$emit('update:vpcId', '');
-          this.$emit('update:vswitchIds', []);
-          this.$emit('update:podVswitchIds', []);
-
           await this.getVPCs();
-          const firstVpc = Object.keys(this.allVPCs)[0];
+          if (this.isNewOrUnprovisioned) {
+            this.$emit('update:vpcId', '');
+            this.$emit('update:vswitchIds', []);
+            this.$emit('update:podVswitchIds', []);
 
-          if (firstVpc) {
-            this.$emit('update:vpcId', firstVpc);
+            const firstVpc = Object.keys(this.allVPCs)[0];
+
+            if (firstVpc) {
+              this.$emit('update:vpcId', firstVpc);
+            }
           }
         }
       },
@@ -524,7 +528,7 @@ export default defineComponent({
         </div>
       </div>
       <div
-        v-if="chooseVPC || !isNewOrUnprovisioned"
+        v-if="chooseVPC"
         class="row mb-10 hierarchy"
       >
         <div class="row span-12">

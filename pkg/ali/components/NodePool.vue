@@ -70,6 +70,9 @@ export default defineComponent({
 
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
+    isView() {
+      return this.mode === _VIEW;
+    },
     systemDisk:{
       get() {
         return {category: this.pool.systemDiskCategory, size:this.pool.systemDiskSize };
@@ -115,7 +118,7 @@ export default defineComponent({
       <div class="col span-3">
         <LabeledInput
           v-model:value.number="pool.desiredSize"
-          :disabled="!pool._isNewOrUnprovisioned"
+          :disabled="isView"
           type="number"
           :mode="mode"
           label-key="ack.nodePool.desiredSize.label"

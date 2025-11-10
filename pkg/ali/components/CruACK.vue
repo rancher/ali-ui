@@ -143,6 +143,7 @@ export default defineComponent({
   data() {
     return {
       normanCluster:          { name: '', aliConfig: {} },
+      originalVersion:        '',
       nodePools:              [],
       membershipUpdate:       {},
       locationOptions:        [],
@@ -187,6 +188,9 @@ export default defineComponent({
       const liveNormanCluster = await this.value.findNormanCluster();
 
       this.normanCluster = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
+
+      // track original version on edit to ensure we don't offer k8s downgrades
+      this.originalVersion = this.normanCluster?.aliConfig?.kubernetesVersion || '';
     } else {
       const base = !this.isImport ? defaultCluster : importedDefaultCluster ;
 
@@ -239,6 +243,10 @@ export default defineComponent({
     VIEW() {
       return _VIEW;
     },
+    isView() {
+      return this.mode === _VIEW;
+    },
+
     supportedVersionRange() {
       return this.$store.getters['management/byId'](MANAGEMENT.SETTING, SETTING.UI_SUPPORTED_K8S_VERSIONS)?.value;
     },
@@ -340,14 +348,15 @@ export default defineComponent({
       const { alibabaCredentialSecret, regionId } = this.config;
 
       try {
-        const res = await getAlibabaKubernetesVersions(this.$store, alibabaCredentialSecret, regionId, this.isEdit );
+        // Get all versions here and get upgradable options later
+        const res = await getAlibabaKubernetesVersions(this.$store, alibabaCredentialSecret, regionId, false, '' );
         const unprocessedVersions = (res || []).map((v) => {
           return {
             value: v.version, creatable: v.creatable, images: v.images
           };
         });
 
-        this.allVersions = this.processVersions(unprocessedVersions);
+        this.allVersions = await this.processVersions(unprocessedVersions);
       } catch (err) {
         const parsedError = err.error || '';
 
@@ -356,15 +365,39 @@ export default defineComponent({
       this.loadingVersions = false;
     },
 
-    processVersions(unprocessedVersions) {
+    async processVersions(unprocessedVersions) {
       const newAllImages = {};
+      const { alibabaCredentialSecret, regionId } = this.config;
+      let upgradableVersions;
+
+      if (this.isEdit) {
+        const res = await getAlibabaKubernetesVersions(this.$store, alibabaCredentialSecret, regionId, this.isEdit, this.originalVersion );
+
+        if (res && res.length > 0 && res[0].upgradable_versions) {
+          upgradableVersions = new Set(res[0].upgradable_versions);
+        }
+      }
       const validVersions = (unprocessedVersions || []).reduce((versions, version) => {
         const coerced = semver.coerce(version.value);
 
         if (this.supportedVersionRange && !semver.satisfies(coerced, this.supportedVersionRange)) {
           return versions;
         }
-        if ((this.isCreate && version.creatable) || !this.isCreate) {
+        const isCurrentValue = !this.isCreate && version.value === this.originalVersion;
+        const curImages = this.config.nodePools.map((pool) => pool.imageType);
+        const versionImages = new Set(version.images.map((image) => image.image_type));
+
+        let canUpgradeTo = this.isEdit && !!upgradableVersions && upgradableVersions.has(version.value);
+        let i = 0;
+
+        while (canUpgradeTo && i < curImages.length) {
+          if (!versionImages.has(curImages[i])) {
+            canUpgradeTo = false;
+          }
+          i++;
+        }
+
+        if ((this.isCreate && version.creatable) || isCurrentValue || canUpgradeTo) {
           versions.push({ value: version.value, label: version.value });
           newAllImages[version.value] = version.images;
         }
@@ -496,7 +529,7 @@ export default defineComponent({
           :mode="mode"
           label-key="nameNsDescription.description.label"
           :placeholder="t('nameNsDescription.description.placeholder')"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="isView"
         />
       </div>
     </div>
@@ -542,7 +575,7 @@ export default defineComponent({
           option-label="label"
           :loading="loadingVersions"
           required
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="isView"
         />
       </div>
     </div>
@@ -602,7 +635,7 @@ export default defineComponent({
           ref="pools"
           class="node-pools mb-20"
           :side-tabs="true"
-          :show-tabs-add-remove="mode !== VIEW"
+          :show-tabs-add-remove="!isView"
           :use-hash="false"
           @removeTab="removePool($event)"
           @addTab="addPool()"

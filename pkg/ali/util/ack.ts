@@ -51,11 +51,13 @@ export async function getAlibabaKubernetesVersions(
   store: Store<any>,
   alibabaCredentialSecret: string,
   regionId: string,
-  isEdit: boolean
+  isEdit: boolean,
+  kubernetesVersion: string
 ): Promise<any> {
-  const extra: any = { clusterType: "ManagedKubernetes", mode: "supported" }; //TODO change once I know more
+  const extra: any = { clusterType: "ManagedKubernetes", mode: "supported" };
   if (isEdit) {
     extra.getUpgradableVersions = true;
+    extra.kubernetesVersion = kubernetesVersion;
   }
   return getACKOptions(
     store,
