@@ -442,9 +442,9 @@ export default defineComponent({
     },
     removePool(i) {
       const pool = this.nodePools[i];
-      const lastAndEdit = this.nodePools.length === 1 && !this.isNewOrUnprovisioned;
+      const lastAndUnprovisioned = this.nodePools.length === 1 && !this.isNewOrUnprovisioned;
 
-      if (!lastAndEdit) {
+      if (!lastAndUnprovisioned) {
         removeObject(this.nodePools, pool);
       }
     },
