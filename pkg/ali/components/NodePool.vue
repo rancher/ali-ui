@@ -181,6 +181,7 @@ export default defineComponent({
         const out = [];
 
         for (const type in types) {
+          // Checking against the most seen disks instead of the length of instance types in case some types are invalid
           if (types[type].counter === maxCount) {
             out.push({ value: type, label: this.t( `ack.nodePool.diskCategory.options.${ type }`) });
           }
