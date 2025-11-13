@@ -666,10 +666,10 @@ export default defineComponent({
       </div>
       <div
         v-if="isFlannel"
-        class="col"
+        class="col span-6"
       >
         <div class="row">
-          <div class="col span-8 mr-20">
+          <div class="col span-6 mr-20">
             <LabeledInput
               :value="containerCidr"
               :mode="mode"
@@ -681,9 +681,9 @@ export default defineComponent({
               @update:value="$emit('update:containerCidr', $event)"
             />
           </div>
-          <div class="col span-8">
+          <div class="col span-4">
             <LabeledSelect
-              v-model:value="nodeCidrMask"
+              :value="nodeCidrMask"
               :mode="mode"
               :options="podsPerNodeOptions"
               label-key="ack.networking.nodeCidrMask.label"
@@ -737,7 +737,7 @@ export default defineComponent({
         />
       </div>
       <div class="col span-6">
-        <div class="col span-7">
+        <div class="col span-6">
           <LabeledInput
             :value="serviceCidr"
             :mode="mode"
