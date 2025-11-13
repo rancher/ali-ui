@@ -11,6 +11,7 @@
       "catalog.cattle.io/certified": "rancher"
     }
   },
+  "icon":"https://raw.githubusercontent.com/rancher/ali-ui/refs/heads/main/pkg/ali/assets/alibaba.svg",
   "scripts": {
     "dev": "./node_modules/.bin/nuxt dev",
     "nuxt": "./node_modules/.bin/nuxt"
