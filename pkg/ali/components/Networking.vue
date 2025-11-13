@@ -10,14 +10,19 @@ import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import { doCidrOverlap, isValidCIDR } from '../util/validation';
 import { getAlibabaResourceGroups, getAlibabaVpcs, getAlibabaZones, getAlibabaVSwitches } from '../util/ack';
 
-const DEFAULT_CONTAINER_CIDR = '10.0.0.0/8';
-const BACKUP_SERVICE_CIDR = '172.16.0.0/16';
-const DEFAULT_SERVICE_CIDR = '192.168.0.0/16';
+const SERVICE_CIDR_1 = '172.16.0.0/16';
+const SERVICE_CIDR_2 = '192.168.0.0/16';
+
+const CONTAINER_CIDR_1 = '172.16.0.0/12';
+const CONTAINER_CIDR_2 = '192.168.0.0/16';
+const CONTAINER_CIDR_3 = '10.0.0.0/8';
 
 const FLANNEL = 'flannel';
 const TERWAY = 'terway';
 const FLANNEL_ADDON = 'flannel';
 const TERWAY_ADDON = 'terway-eniip';
+
+const MAX_NODE_CIDR_MASK = 28;
 
 export default defineComponent({
   name: 'Networking',
@@ -38,7 +43,8 @@ export default defineComponent({
     'update:endpointPublicAccess',
     'update:containerCidr',
     'update:podVswitchIds',
-    'update:addons'],
+    'update:addons',
+    'update:nodeCidrMask'],
 
   components: {
     LabeledSelect,
@@ -119,6 +125,10 @@ export default defineComponent({
       type:     Array,
       default: () => []
     },
+    nodeCidrMask: {
+      type:    Number,
+      default: null
+    }
   },
 
   data() {
@@ -194,8 +204,8 @@ export default defineComponent({
     networkPluginOptions() {
       return [
         {
-          value:    FLANNEL,
-          label:    this.t('ack.networking.networkPlugin.options.flannel'),
+          value: FLANNEL,
+          label: this.t('ack.networking.networkPlugin.options.flannel'),
         },
         {
           value: TERWAY,
@@ -214,6 +224,20 @@ export default defineComponent({
           label: this.t('ack.networking.proxyMode.options.ipvs')
         }
       ];
+    },
+    podsPerNodeOptions() {
+      const out = [];
+      let val = MAX_NODE_CIDR_MASK;
+
+      for (let i = 16; i <= 256; i *= 2) {
+        out.push({
+          value:    val,
+          label:    i,
+        });
+        val -= 1;
+      }
+
+      return out;
     },
     isFlannel() {
       return this.networkPlugin === FLANNEL;
@@ -345,13 +369,18 @@ export default defineComponent({
       async handler(neu) {
         if (this.isNewOrUnprovisioned) {
           if (doCidrOverlap(this.serviceCidr, this.allVPCs[neu]?.cidr)) {
-            const overlapWithDefault = doCidrOverlap(DEFAULT_SERVICE_CIDR, this.allVPCs[neu]?.cidr);
+            const serviceOverlapWithDefault = doCidrOverlap(SERVICE_CIDR_1, this.allVPCs[neu]?.cidr);
 
-            !overlapWithDefault ? this.$emit('update:serviceCidr', DEFAULT_SERVICE_CIDR) : this.$emit('update:serviceCidr', BACKUP_SERVICE_CIDR);
+            if (!serviceOverlapWithDefault) {
+              this.$emit('update:serviceCidr', SERVICE_CIDR_1);
+            } else {
+              this.$emit('update:serviceCidr', SERVICE_CIDR_2);
+            }
           }
-          if (doCidrOverlap(this.containerCidr, this.allVPCs[neu]?.cidr)) {
-            this.$emit('update:containerCidr', '');
+          if (this.isFlannel) {
+            this.$emit('update:containerCidr', this.findContainerCidr());
           }
+
           this.$emit('update:vswitchIds', []);
           this.$emit('update:podVswitchIds', []);
           if (this.chooseVPC) {
@@ -366,14 +395,23 @@ export default defineComponent({
     },
     'networkPlugin'(neu) {
       if (neu === FLANNEL) {
-        this.$emit('update:containerCidr', DEFAULT_CONTAINER_CIDR);
+        this.$emit('update:containerCidr', this.findContainerCidr(CONTAINER_CIDR_1));
         this.$emit('update:podVswitchIds', []);
         this.$emit('update:addons', [{ name: FLANNEL_ADDON }]);
+        this.$emit('update:nodeCidrMask', MAX_NODE_CIDR_MASK);
       } else {
         this.$emit('update:containerCidr', null);
         this.$emit('update:addons', [{ name: TERWAY_ADDON }]);
+        this.$emit('update:podVswitchIds', this.podVswitchIdOptions.length === 0 ? [] : [this.podVswitchIdOptions[0]]);
+        this.$emit('update:nodeCidrMask', null);
       }
     },
+    serviceCidr() {
+      if (this.isFlannel) {
+        this.$emit('update:containerCidr', this.findContainerCidr());
+      }
+    },
+
   },
 
   methods: {
@@ -481,7 +519,25 @@ export default defineComponent({
         });
       }
       this.$emit('zoneChanged', new Set(zones));
-    }
+    },
+    findContainerCidr(val) {
+      const cur = !val ? this.containerCidr : val;
+      const vpcCidr = this.allVPCs[this.vpcId]?.cidr;
+      const doesCurOverlapWVPC = doCidrOverlap(cur, vpcCidr);
+      const doesCurOverlapWService = doCidrOverlap(cur, this.serviceCidr);
+
+      if (!doesCurOverlapWVPC && !doesCurOverlapWService) {
+        return cur;
+      } else if (!doCidrOverlap(CONTAINER_CIDR_1, vpcCidr) && !doCidrOverlap(CONTAINER_CIDR_1, this.serviceCidr)) {
+        return CONTAINER_CIDR_1;
+      } else if (!doCidrOverlap(CONTAINER_CIDR_2, vpcCidr) && !doCidrOverlap(CONTAINER_CIDR_2, this.serviceCidr)) {
+        return CONTAINER_CIDR_2;
+      } else if (!doCidrOverlap(CONTAINER_CIDR_3, vpcCidr) && !doCidrOverlap(CONTAINER_CIDR_3, this.serviceCidr)) {
+        return CONTAINER_CIDR_3;
+      }
+
+      return '';
+    },
 
   }
 });
@@ -610,19 +666,39 @@ export default defineComponent({
       </div>
       <div
         v-if="isFlannel"
-        class="col span-4"
+        class="col"
       >
-        <LabeledInput
-          :value="containerCidr"
-          :mode="mode"
-          label-key="ack.networking.containerCidr.label"
-          :disabled="!isNewOrUnprovisioned"
-          data-testid="ack-networking-containerCidr-input"
-          :rules="fvGetAndReportPathRules('containerCidr')"
-          required
-          @update:value="$emit('update:containerCidr', $event)"
+        <div class="row">
+          <div class="col span-8 mr-20">
+            <LabeledInput
+              :value="containerCidr"
+              :mode="mode"
+              label-key="ack.networking.containerCidr.label"
+              :disabled="!isNewOrUnprovisioned"
+              data-testid="ack-networking-containerCidr-input"
+              :rules="fvGetAndReportPathRules('containerCidr')"
+              required
+              @update:value="$emit('update:containerCidr', $event)"
+            />
+          </div>
+          <div class="col span-8">
+            <LabeledSelect
+              v-model:value="nodeCidrMask"
+              :mode="mode"
+              :options="podsPerNodeOptions"
+              label-key="ack.networking.nodeCidrMask.label"
+              :disabled="!isNewOrUnprovisioned"
+              data-testid="ack-networking-node-cidr-mask-select"
+              @update:value="$emit('update:nodeCidrMask', $event)"
+            />
+          </div>
+        </div>
+        <p
+          v-clean-html="t('ack.networking.containerCidr.info')"
+          class="text-muted text-small mt-5"
         />
       </div>
+
       <div
         v-else-if="isTerway"
         class="col span-6"
@@ -660,8 +736,8 @@ export default defineComponent({
           @update:value="$emit('update:proxyMode', $event)"
         />
       </div>
-      <div class="col span-8">
-        <div class="col span-4">
+      <div class="col span-6">
+        <div class="col span-7">
           <LabeledInput
             :value="serviceCidr"
             :mode="mode"
@@ -675,7 +751,7 @@ export default defineComponent({
           />
         </div>
         <p
-          v-clean-html="t('ack.networking.serviceCidr.warning')"
+          v-clean-html="t('ack.networking.serviceCidr.info')"
           class="text-muted text-small mt-5"
         />
       </div>

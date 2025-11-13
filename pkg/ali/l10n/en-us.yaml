@@ -98,10 +98,13 @@ ack:
           ipvs: IPVS
     containerCidr:
       label: Container Network Address Range
+      info: 'You must specify one of the following CIDR blocks or their subnets: 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16.'
     serviceCidr:
       label: Service CIDR
       placeholder: 192.168.0.0/16
-      warning: 'Valid values: 10.0-255.0.0/16-24, 172.16-31.0.0/16-24, and 192.168.0.0/16-24'
+      info: 'Valid values: 10.0-255.0.0/16-24, 172.16-31.0.0/16-24, and 192.168.0.0/16-24.'
+    nodeCidrMask:
+      label: Number of Pods per Node
     podVswitchIds:
       label: Pod vSwitch
       auto: Pod vSwitches are automatically created from the VPC.
