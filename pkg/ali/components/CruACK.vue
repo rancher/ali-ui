@@ -406,8 +406,8 @@ export default defineComponent({
           return versions;
         }
         const isCurrentValue = !this.isCreate && version.value === this.originalVersion;
-        const curImages = this.config.nodePools.map((pool) => pool.imageType);
-        const versionImages = new Set(version.images.map((image) => image.image_type));
+        const curImages = (this.config.nodePools || []).map((pool) => pool.imageType);
+        const versionImages = new Set((version.images || []).map((image) => image.image_type));
 
         let canUpgradeTo = this.isEdit && !!upgradableVersions && upgradableVersions.has(version.value);
         let i = 0;
@@ -611,6 +611,7 @@ export default defineComponent({
       >
         <RadioGroup
           v-model:value="config.clusterSpec"
+          name="cluster-spec"
           data-testid="cruack-clusterSpec"
           :mode="mode"
           :options="clusterSpecOptions"
