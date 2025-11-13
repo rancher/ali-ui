@@ -34,39 +34,18 @@ export default defineComponent({
     showEncrypted: {
       type:    Boolean,
       default: true
+    },
+    options: {
+      type:    Array,
+      default: () => []
+    },
+    loading: {
+      type:    Boolean,
+      default: false
     }
   },
 
   computed: {
-    categoryOptions(): Array<any> {
-      return [
-        {
-          value:    'cloud',
-          label:    this.t('ack.nodePool.diskCategory.options.cloud'),
-        },
-        {
-          value:    'cloud_efficiency',
-          label:    this.t('ack.nodePool.diskCategory.options.cloudEfficiency'),
-        },
-        {
-          value:    'cloud_ssd',
-          label:    this.t('ack.nodePool.diskCategory.options.cloudSsd'),
-        },
-        {
-          value:    'cloud_essd',
-          label:    this.t('ack.nodePool.diskCategory.options.cloudEssd'),
-        },
-        {
-          value:    'cloud_auto',
-          label:    this.t('ack.nodePool.diskCategory.options.cloudAuto'),
-        },
-        {
-          value:    'cloud_essd_entry',
-          label:    this.t('ack.nodePool.diskCategory.options.cloudEssdEntry'),
-        },
-        
-      ];
-    },
     category: {
       get() { return this.value.category; },
       set(neu: string) { this.$emit('update:value', { ...this.value, category: neu }); }
@@ -90,7 +69,7 @@ export default defineComponent({
     <LabeledSelect
         v-model:value="category"
         :mode="mode"
-        :options="categoryOptions"
+        :options="options"
         :disabled="!isNewOrUnprovisioned"
         label-key="ack.nodePool.diskCategory.label"
         option-key="value"

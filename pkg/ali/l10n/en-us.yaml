@@ -65,11 +65,11 @@ ack:
       label: Category
       options:
          cloud: Basic Disk
-         cloudEfficiency: Ultra Disk
-         cloudSsd: Standard SSD Disk
-         cloudEssd: ESSD Disk
-         cloudAuto: ESSD AutoPL Disk
-         cloudEssdEntry: ESSD Entry Disk
+         cloud_efficiency: Ultra Disk
+         cloud_ssd: Standard SSD Disk
+         cloud_essd: ESSD Disk
+         cloud_auto: ESSD AutoPL Disk
+         cloud_essd_entry: ESSD Entry Disk
     diskSize:
       label: Disk size
     diskGroup:
@@ -126,6 +126,7 @@ ack:
     resourceGroups: 'An error occurred while fetching available resource groups: {e}'
     instanceTypes: 'An error occurred while fetching available instance types: {e}'
     regions: 'An error occurred while fetching available regions: {e}'
+    diskTypes: 'An error occurred while fetching available disk types: {e}'
 
 generic:
   moveUp: Move up

@@ -211,3 +211,24 @@ export async function getAlibabaInstanceTypes(
     extra
   );
 }
+
+export async function getDataDisksForInstanceTypes(
+  store: Store<any>,
+  alibabaCredentialSecret: string,
+  regionId: string,
+  instanceType: string
+): Promise<any> {
+  const extra: any = {
+    destinationResource: "DataDisk",
+    resourceType: "disk",
+    instanceType
+  };
+  return getACKOptions(
+    store,
+    alibabaCredentialSecret,
+    regionId,
+    "alibabaAvailableResources",
+    "",
+    extra
+  );
+}

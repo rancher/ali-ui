@@ -41,6 +41,10 @@ export default {
       type:    Boolean,
       default: true
     },
+    options: {
+      type:    Array,
+      default: () => []
+    },
   },
   setup(props, { emit }) {
     const input = (Array.isArray(props.value) ? props.value : []).slice();
@@ -165,6 +169,8 @@ export default {
           v-model:value="row.value"
           :mode="mode"
           :is-new-or-unprovisioned="isNewOrUnprovisioned"
+          :options="options"
+          :loading="loading"
         >
           <template #remove>
             <div

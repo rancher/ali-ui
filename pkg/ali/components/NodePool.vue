@@ -1,13 +1,16 @@
-<script lang="ts">
+<script>
 import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
-import Banner from '@components/Banner/Banner.vue';
 import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
+import { getDataDisksForInstanceTypes } from '../util/ack';
+
+const STATUS_AVAILABLE = 'Available';
+const DATA_DISK = 'DataDisk';
 
 export default defineComponent({
   name: 'ACKNodePool',
@@ -15,7 +18,6 @@ export default defineComponent({
   components: {
     LabeledInput,
     LabeledSelect,
-    Banner,
     InstanceType,
     DiskType,
     DiskGroup
@@ -31,12 +33,12 @@ export default defineComponent({
       type:     Object,
       required: true
     },
-    config:{
+    config: {
       type:     Object,
       required: true
     },
     allImages: {
-      type:   Object,
+      type:    Object,
       default: () => {}
     },
     loadingImages: {
@@ -47,26 +49,26 @@ export default defineComponent({
       type:    Boolean,
       default: false
     },
-    allInstanceTypes:{
-      type:   Object,
+    allInstanceTypes: {
+      type:    Object,
       default: () => {}
     },
-    zones:{
-      type:   Object,
+    zones: {
+      type:    Object,
       default: () => new Set()
     },
   },
+  emits: ['error'],
 
   data() {
     return {
       osDiskTypeOptions:       ['Managed', 'Ephemeral'],
       modeOptions:             ['User', 'System'],
-      maxPools:                5000
-
+      maxPools:                5000,
+      loadingDiskTypes:        false,
+      allDiskTypes:            [],
     };
   },
-
-  watch: {},
 
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
@@ -76,34 +78,124 @@ export default defineComponent({
     isEditingImported() {
       return this.config.imported && !this.pool._isNewOrUnprovisioned;
     },
-    showInstanceTypes(){
+    showInstanceTypes() {
       return this.pool.instanceTypes || this.pool._isNewOrUnprovisioned;
     },
-    systemDisk:{
+    systemDisk: {
       get() {
-        return {category: this.pool.systemDiskCategory, size:this.pool.systemDiskSize };
+        return { category: this.pool.systemDiskCategory, size: this.pool.systemDiskSize };
       },
-      set(neu: {category: string, size?: string, encrypted?: boolean}) {
+      set(neu) {
         this.pool.systemDiskCategory = neu.category;
         this.pool.systemDiskSize = neu.size;
       }
     },
-    imageOptions(): Array<any> {
+    imageOptions() {
       return Object.keys(this.allImages).map((image) => {
-        return { value: image, label: this.allImages[image].label || ''};
+        return { value: image, label: this.allImages[image].label || '' };
       });
     },
-    image:{
+    image: {
       get() {
         return this.pool.imageType;
       },
-      set(neu: string) {
+      set(neu) {
         this.pool.imageId = this.allImages[neu];
         this.pool.imageType = neu;
       }
     }
   },
-  
+  watch: {
+    'pool.instanceTypes': {
+      handler() {
+        this.getDiskTypes();
+      },
+      immediate: true
+    },
+    'config.regionId': {
+      handler() {
+        this.getDiskTypes();
+      },
+      immediate: true
+    },
+    'config.alibabaCredentialSecret': {
+      handler() {
+        this.getDiskTypes();
+      },
+      immediate: true
+    }
+  },
+
+  methods: {
+    async getDiskTypes() {
+      this.loadingDiskTypes = true;
+      this.allDiskTypes = [];
+      const { alibabaCredentialSecret, regionId } = this.config;
+
+      try {
+        const types = {};
+        let maxCount = 0;
+
+        for (let i = 0; i < this.pool.instanceTypes.length; i++) {
+          const instanceType = this.pool.instanceTypes[i];
+          const res = await getDataDisksForInstanceTypes(this.$store, alibabaCredentialSecret, regionId, instanceType );
+          const availableZones = res?.AvailableZones?.AvailableZone || [];
+
+          availableZones.forEach((zone) => {
+            const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this.isNewOrUnprovisioned;
+
+            if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
+              const availableResources = zone.AvailableResources?.AvailableResource;
+
+              availableResources.forEach((resource) => {
+                if (resource.Type === DATA_DISK) {
+                  const dataDisks = resource.SupportedResources?.SupportedResource;
+
+                  dataDisks.forEach((disk) => {
+                    if (!types[disk.Value]) {
+                      types[disk.Value] = {
+                        min:      disk.Min,
+                        max:      disk.Max,
+                        counter:  1,
+                        lastType: instanceType
+                      };
+                    } else {
+                      const cur = types[disk.Value];
+                      const shouldIncrement = cur.lastType !== instanceType;
+
+                      types[disk.Value] = {
+                        min:      Math.min(types[disk.Value].min, disk.Min),
+                        max:      Math.max(cur.max, disk.Max),
+                        counter:  !shouldIncrement ? cur.counter : cur.counter + 1,
+                        lastType: instanceType
+                      };
+                    }
+                    maxCount = Math.max(maxCount, types[disk.Value].counter);
+                  });
+                }
+              });
+            }
+          });
+        }
+        // I will use min and max for validation later
+        const out = [];
+
+        for (const type in types) {
+          if (types[type].counter === maxCount) {
+            out.push({ value: type, label: this.t( `ack.nodePool.diskCategory.options.${ type }`) });
+          }
+        }
+        this.allDiskTypes = out;
+      } catch (err) {
+        const parsedError = err.error || '';
+
+        this.$emit('error', this.t('ack.errors.diskTypes', { e: parsedError || err }));
+      }
+      this.loadingDiskTypes = false;
+    }
+
+  },
+
 });
 </script>
 
@@ -149,8 +241,11 @@ export default defineComponent({
         />
       </div>
     </div>
-    <div v-if="showInstanceTypes" class="col mb-30" >
-      <InstanceType 
+    <div
+      v-if="showInstanceTypes"
+      class="col mb-30"
+    >
+      <InstanceType
         v-model:value="pool.instanceTypes"
         :config="config"
         :mode="mode"
@@ -161,20 +256,26 @@ export default defineComponent({
       />
     </div>
   </div>
-  <p class="mb-10">{{ t('ack.nodePool.systemDisk.title')}}</p>
-  <DiskType 
+  <p class="mb-10">
+    {{ t('ack.nodePool.systemDisk.title') }}
+  </p>
+  <DiskType
     v-model:value="systemDisk"
     :mode="mode"
     :is-new-or-unprovisioned="pool._isNewOrUnprovisioned"
     :show-encrypted="false"
-    
+    :options="allDiskTypes"
+    :loading="loadingDiskTypes"
   />
-  <p class="mb-10">{{ t('ack.nodePool.dataDisks.title')}}</p>
-  <DiskGroup 
+  <p class="mb-10">
+    {{ t('ack.nodePool.dataDisks.title') }}
+  </p>
+  <DiskGroup
     v-model:value="pool.dataDisks"
     :mode="mode"
     :is-new-or-unprovisioned="pool._isNewOrUnprovisioned"
     :add-disabled="!pool._isNewOrUnprovisioned"
+    :options="allDiskTypes"
+    :loading="loadingDiskTypes"
   />
 </template>
-
