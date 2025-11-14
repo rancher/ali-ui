@@ -6,8 +6,8 @@ async function getACKOptions(
   alibabaCredentialSecret: string,
   regionId: string | undefined,
   resource: string,
+  extra?: object,
   clusterId?: string,
-  extra?: object
 ): Promise<any> {
   if (!alibabaCredentialSecret) {
     return null;
@@ -64,7 +64,6 @@ export async function getAlibabaKubernetesVersions(
     alibabaCredentialSecret,
     regionId,
     "alibabaKubernetesVersions",
-    "",
     extra
   );
 }
@@ -74,11 +73,14 @@ export async function getAlibabaClusters(
   alibabaCredentialSecret: string,
   regionId?: string
 ): Promise<any> {
+
+  const extra: any = {pageSize: 50}
   return getACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
-    "alibabaClusters"
+    "alibabaClusters",
+    extra
   );
 }
 
@@ -94,7 +96,6 @@ export async function getAllAlibabaInstanceTypes(
     alibabaCredentialSecret,
     regionId,
     "alibabaInstanceTypes",
-    "",
     extra
   );
 }
@@ -104,11 +105,13 @@ export async function getAlibabaKeyPairs(
   alibabaCredentialSecret: string,
   regionId?: string
 ): Promise<any> {
+  let extra: any = {pageSize: 50};
   return getACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
-    "alibabaKeyPairs"
+    "alibabaKeyPairs",
+    extra
   );
 }
 
@@ -117,11 +120,13 @@ export async function getAlibabaResourceGroups(
   alibabaCredentialSecret: string,
   regionId?: string
 ): Promise<any> {
+  const extra = {pageSize: 100};
   return getACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
-    "alibabaResourceGroups"
+    "alibabaResourceGroups",
+    extra
   );
 }
 
@@ -131,13 +136,15 @@ export async function getAlibabaVpcs(
   regionId: string,
   resourceGroupId?: string
 ): Promise<any> {
-  const extra = !resourceGroupId ? {} : { resourceGroupId };
+  const extra: any = {pageSize: 50};
+  if(!!resourceGroupId) {
+    extra.resourceGroupId = resourceGroupId;
+  }
   return getACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
     "alibabaVpcs",
-    "",
     extra
   );
 }
@@ -162,7 +169,7 @@ export async function getAlibabaVSwitches(
   vpcId?: string,
   resourceGroupId?: string
 ): Promise<any> {
-  const extra: any = {};
+  const extra: any = {pageSize: 50};
   if (!!vpcId) {
     extra.vpcId = vpcId;
   }
@@ -174,7 +181,6 @@ export async function getAlibabaVSwitches(
     alibabaCredentialSecret,
     regionId,
     "alibabaVSwitches",
-    "",
     extra
   );
 }
@@ -189,7 +195,6 @@ export async function getAlibabaInstanceTypeFamilies(
     alibabaCredentialSecret,
     regionId,
     "alibabaAvailableResources"
-
   );
 }
 
@@ -207,7 +212,6 @@ export async function getAlibabaInstanceTypes(
     alibabaCredentialSecret,
     regionId,
     "alibabaAvailableResources",
-    "",
     extra
   );
 }
@@ -228,7 +232,6 @@ export async function getDataDisksForInstanceTypes(
     alibabaCredentialSecret,
     regionId,
     "alibabaAvailableResources",
-    "",
     extra
   );
 }
