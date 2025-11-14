@@ -75,9 +75,7 @@ export default defineComponent({
     isView() {
       return this.mode === _VIEW;
     },
-    isEditingImported() {
-      return this.config.imported && !this.pool._isNewOrUnprovisioned;
-    },
+
     showInstanceTypes() {
       return this.pool.instanceTypes || this.pool._isNewOrUnprovisioned;
     },
