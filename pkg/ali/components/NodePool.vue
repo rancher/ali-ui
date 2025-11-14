@@ -138,8 +138,9 @@ export default defineComponent({
       try {
         const types = {};
         let maxCount = 0;
+        const instanceTypesLength = this.pool?.instanceTypes?.length || 0;
 
-        for (let i = 0; i < this.pool.instanceTypes.length; i++) {
+        for (let i = 0; i < instanceTypesLength; i++) {
           const instanceType = this.pool.instanceTypes[i];
           const res = await getDataDisksForInstanceTypes(this.$store, alibabaCredentialSecret, regionId, instanceType );
           const availableZones = res?.AvailableZones?.AvailableZone || [];
