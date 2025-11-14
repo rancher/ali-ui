@@ -222,7 +222,7 @@ export default defineComponent({
       >
         <LabeledInput
           v-model:value.number="pool.desiredSize"
-          :disabled="isView"
+          :disabled="isView || pool._isUnprovisioned"
           type="number"
           :mode="mode"
           label-key="ack.nodePool.desiredSize.label"
