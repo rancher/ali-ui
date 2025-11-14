@@ -236,27 +236,28 @@ export default defineComponent({
       </div>
       <div
         v-else
-        class="row"
+        class="row span-12"
       >
-        <LabeledInput
-          v-model:value.number="pool.minInstances"
-          :disabled="true"
-          type="number"
-          :mode="mode"
-          label-key="ack.nodePool.minInstances.label"
-          data-testid="ack-pool-min-instances-input"
-          required
-          class="mr-20"
-        />
-        <LabeledInput
-          v-model:value.number="pool.maxInstances"
-          :disabled="true"
-          type="number"
-          :mode="mode"
-          label-key="ack.nodePool.maxInstances.label"
-          data-testid="ack-pool-max-instances-input"
-          required
-        />
+        <div class="col span-2">
+          <LabeledInput
+            v-model:value.number="pool.minInstances"
+            :disabled="true"
+            type="number"
+            :mode="mode"
+            label-key="ack.nodePool.minInstances.label"
+            data-testid="ack-pool-min-instances-input"
+          />
+        </div>
+        <div class="col span-2">
+          <LabeledInput
+            v-model:value.number="pool.maxInstances"
+            :disabled="true"
+            type="number"
+            :mode="mode"
+            label-key="ack.nodePool.maxInstances.label"
+            data-testid="ack-pool-max-instances-input"
+          />
+        </div>
       </div>
     </div>
     <div class="row mb-20">
