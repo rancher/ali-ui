@@ -57,6 +57,10 @@ export default defineComponent({
       type:    Object,
       default: () => new Set()
     },
+    isInactive: {
+      type:    Boolean,
+      default: false
+    }
   },
   emits: ['error'],
 
@@ -222,7 +226,7 @@ export default defineComponent({
       >
         <LabeledInput
           v-model:value.number="pool.desiredSize"
-          :disabled="isView || pool._isUnprovisioned"
+          :disabled="isView || isInactive"
           type="number"
           :mode="mode"
           label-key="ack.nodePool.desiredSize.label"

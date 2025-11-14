@@ -196,7 +196,7 @@ export default defineComponent({
       const liveNormanCluster = await this.value.findNormanCluster();
 
       this.normanCluster = await store.dispatch(`rancher/clone`, { resource: liveNormanCluster });
-      if (!(this.isNew || this.isUnprovisioned) ) {
+      if (!(this.isNew || this.isInactive) ) {
         syncUpstreamConfig('ali', this.normanCluster);
       }
 
@@ -222,7 +222,6 @@ export default defineComponent({
         this.normanCluster.aliConfig.nodePools.forEach((pool) => {
           pool['_id'] = pool.nodePoolId || randomStr();
           pool['_isNew'] = this.isNew;
-          pool['_isUnprovisioned'] = this.isUnprovisioned;
           pool['_validation'] = {};
         });
       }
@@ -266,7 +265,7 @@ export default defineComponent({
       return this.mode === _CREATE || this.mode === _IMPORT;
     },
 
-    isUnprovisioned() {
+    isInactive() {
       return !this.isNew && (!this.normanCluster?.aliStatus?.upstreamSpec || this.value.state !== STATES_ENUM.ACTIVE);
     },
     clusterSpecOptions() {
@@ -477,7 +476,7 @@ export default defineComponent({
       const poolName = `nodePool-${ this.nodePools.length + 1 }`;
       const _id = randomStr();
       const neu = {
-        ...cloneDeep(DEFAULT_NODE_GROUP_CONFIG), name: poolName, _id, _isNew: true, _isUnprovisioned: this.isUnprovisioned, version: this.config.kubernetesVersion
+        ...cloneDeep(DEFAULT_NODE_GROUP_CONFIG), name: poolName, _id, _isNew: true, version: this.config.kubernetesVersion
       };
 
       this.nodePools.push(neu);
@@ -559,7 +558,7 @@ export default defineComponent({
           :mode="mode"
           label-key="nameNsDescription.description.label"
           :placeholder="t('nameNsDescription.description.placeholder')"
-          :disabled="isView || isUnprovisioned"
+          :disabled="isView || isInactive"
         />
       </div>
     </div>
@@ -606,7 +605,7 @@ export default defineComponent({
           option-label="label"
           :loading="loadingVersions"
           required
-          :disabled="isView || isUnprovisioned"
+          :disabled="isView || isInactive"
         />
       </div>
     </div>
@@ -684,7 +683,7 @@ export default defineComponent({
           ref="pools"
           class="node-pools mb-20"
           :side-tabs="true"
-          :show-tabs-add-remove="!isView && !isUnprovisioned"
+          :show-tabs-add-remove="!isView && !isInactive"
           :use-hash="false"
           @removeTab="removePool($event)"
           @addTab="addPool()"
@@ -699,6 +698,7 @@ export default defineComponent({
               :mode="mode"
               :config="config"
               :pool="pool"
+              :is-inactive="isInactive"
               :all-images="allImagesForVersion"
               :all-instance-types="allInstanceTypes"
               :loading-images="loadingImages"
