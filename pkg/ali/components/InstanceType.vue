@@ -38,9 +38,9 @@ export default defineComponent({
       type:     Object,
       required: true
     },
-    isNewOrUnprovisioned: {
+    disabled: {
       type:    Boolean,
-      default: true
+      default: false
     },
     loadingInstanceTypes: {
       type:    Boolean,
@@ -211,7 +211,7 @@ export default defineComponent({
       const availableZones = this.localInstanceTypes?.AvailableZones?.AvailableZone || [];
 
       availableZones.forEach((zone) => {
-        const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this.isNewOrUnprovisioned;
+        const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || this.disabled;
 
         if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
           const availableResources = zone.AvailableResources?.AvailableResource;
@@ -290,19 +290,19 @@ export default defineComponent({
 </script>
 <template>
   <h4
-    v-if="isNewOrUnprovisioned"
+    v-if="!disabled"
     class="mb-10"
   >
     {{ t('ack.nodePool.instanceTypes.table.title') }}
   </h4>
   <p
-    v-if="isNewOrUnprovisioned"
+    v-if="!disabled"
     class="mb-10"
   >
     {{ t('ack.nodePool.instanceTypes.table.subtitle') }}
   </p>
   <SortableTable
-    v-if="isNewOrUnprovisioned"
+    v-if="!disabled"
     :loading="loadingInstanceTypes"
     :rows="instanceTypeOptions"
     :headers="instanceTypeColumns"
@@ -354,7 +354,7 @@ export default defineComponent({
     <ArrayListOrdered
       v-model:value="instanceTypesList"
       :mode="mode"
-      :disabled="!isNewOrUnprovisioned"
+      :disabled="disabled"
       :types-dictionary="typesDictionary"
       class="col span-8"
     />

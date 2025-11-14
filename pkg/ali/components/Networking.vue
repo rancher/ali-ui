@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
-import { _CREATE } from '@shell/config/query-params';
+import { _CREATE, _IMPORT } from '@shell/config/query-params';
 import FormValidation from '@shell/mixins/form-validation';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
@@ -63,10 +63,6 @@ export default defineComponent({
     config: {
       type:     Object,
       required: true
-    },
-    isNewOrUnprovisioned: {
-      type:    Boolean,
-      default: true
     },
     configUnreportedErrors: {
       type:    Array,
@@ -185,6 +181,9 @@ export default defineComponent({
     regionId() {
       return this.config.regionId;
     },
+    isNew() {
+      return this.mode === _CREATE || this.mode === _IMPORT;
+    },
 
     fvExtraRules() {
       return {
@@ -274,7 +273,7 @@ export default defineComponent({
 
   watch: {
     chooseVPC(val) {
-      if (this.isNewOrUnprovisioned) {
+      if (this.isNew) {
         if (val) {
           this.$emit('update:zoneIds', []);
           this.$emit('update:vpcId', this.vpcOptions[0]?.value || '');
@@ -303,7 +302,7 @@ export default defineComponent({
 
     'config.regionId': {
       handler() {
-        if (this.isNewOrUnprovisioned) {
+        if (this.isNew) {
           this.$emit('update:resourceGroupId', '');
           this.$emit('update:vpcId', '');
           this.$emit('update:vswitchIds', []);
@@ -317,7 +316,7 @@ export default defineComponent({
     },
     'config.alibabaCredentialSecret': {
       handler() {
-        if (this.isNewOrUnprovisioned) {
+        if (this.isNew) {
           this.$emit('update:resourceGroupId', '');
           this.$emit('update:vpcId', '');
           this.$emit('update:vswitchIds', []);
@@ -333,7 +332,7 @@ export default defineComponent({
       async handler() {
         if (this.chooseVPC) {
           await this.getVPCs();
-          if (this.isNewOrUnprovisioned) {
+          if (this.isNew) {
             this.$emit('update:vpcId', '');
             this.$emit('update:vswitchIds', []);
             this.$emit('update:podVswitchIds', []);
@@ -358,7 +357,7 @@ export default defineComponent({
       handler(neu) {
         if (this.chooseVPC) {
           this.zonesChanged();
-          if (this.isNewOrUnprovisioned) {
+          if (this.isNew) {
             this.$emit('update:podVswitchIds', neu.length === 0 ? [] : [neu[0]]);
           }
         }
@@ -367,7 +366,7 @@ export default defineComponent({
     },
     vpcId: {
       async handler(neu) {
-        if (this.isNewOrUnprovisioned) {
+        if (this.isNew) {
           if (doCidrOverlap(this.serviceCidr, this.allVPCs[neu]?.cidr)) {
             const serviceOverlapWithDefault = doCidrOverlap(SERVICE_CIDR_1, this.allVPCs[neu]?.cidr);
 
@@ -494,7 +493,7 @@ export default defineComponent({
         const zones = (res?.Zones?.Zone || []).map((zone) => ({ value: zone.ZoneId, label: zone.LocalName }));
 
         this.allAvailabilityZones = zones;
-        if (this.isNewOrUnprovisioned && !this.chooseVPC) {
+        if (this.isNew && !this.chooseVPC) {
           this.$emit('update:zoneIds', zones.map((z) => z.value));
         }
       } catch (err) {
@@ -561,7 +560,7 @@ export default defineComponent({
           option-key="value"
           option-label="label"
           :loading="loadingResourceGroups"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNew"
           @update:value="$emit('update:resourceGroupId', $event)"
         />
       </div>
@@ -575,12 +574,12 @@ export default defineComponent({
             {{ t('ack.networking.vpc.title') }}
           </p>
           <RadioGroup
-            v-if="isNewOrUnprovisioned"
+            v-if="isNew"
             v-model:value="chooseVPC"
             name="subnet-mode"
             :mode="mode"
             :options="[{label: t('ack.networking.vpc.default'), value: false},{label: t('ack.networking.vpc.useCustom'), value: true}]"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="!isNew"
             class="hierarchy"
           />
         </div>
@@ -593,7 +592,7 @@ export default defineComponent({
           <div class="col span-6">
             <LabeledSelect
               :value="vpcId"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNew"
               :mode="mode"
               label-key="ack.networking.vpc.label"
               :options="vpcOptions"
@@ -613,7 +612,7 @@ export default defineComponent({
               :multiple="true"
               :loading="loadingVswitches"
               label-key="ack.networking.vpc.vswitchIds.label"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNew"
               data-testid="ack-networking-vswitchIds-input"
               required
               @update:value="$emit('update:vswitchIds', $event)"
@@ -628,7 +627,7 @@ export default defineComponent({
         <div class="col span-4">
           <LabeledSelect
             :value="zoneIds"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="!isNew"
             :options="availabilityZoneOptions"
             :loading="loadingAvailabilityZones"
             label-key="ack.networking.vpc.availabilityZones.label"
@@ -644,7 +643,7 @@ export default defineComponent({
       <div class="row hierarchy">
         <Checkbox
           :value="snatEntry"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNew"
           :mode="mode"
           label-key="ack.networking.vpc.snatEntry.label"
           data-testid="ack-networking-vpc-snatEntry"
@@ -660,7 +659,7 @@ export default defineComponent({
           :mode="mode"
           :options="networkPluginOptions"
           label-key="ack.networking.networkPlugin.label"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNew"
           data-testid="ack-networking-plugin-select"
         />
       </div>
@@ -674,7 +673,7 @@ export default defineComponent({
               :value="containerCidr"
               :mode="mode"
               label-key="ack.networking.containerCidr.label"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNew"
               data-testid="ack-networking-containerCidr-input"
               :rules="fvGetAndReportPathRules('containerCidr')"
               required
@@ -687,7 +686,7 @@ export default defineComponent({
               :mode="mode"
               :options="podsPerNodeOptions"
               label-key="ack.networking.nodeCidrMask.label"
-              :disabled="!isNewOrUnprovisioned"
+              :disabled="!isNew"
               data-testid="ack-networking-node-cidr-mask-select"
               @update:value="$emit('update:nodeCidrMask', $event)"
             />
@@ -711,7 +710,7 @@ export default defineComponent({
           :multiple="true"
           :loading="loadingVswitches"
           label-key="ack.networking.podVswitchIds.label"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNew"
           data-testid="ack-networking-podVswitchIds-input"
           required
           @update:value="$emit('update:podVswitchIds', $event)"
@@ -731,7 +730,7 @@ export default defineComponent({
           :mode="mode"
           :options="proxyModeOptions"
           label-key="ack.networking.proxyMode.label"
-          :disabled="!isNewOrUnprovisioned"
+          :disabled="!isNew"
           data-testid="ack-networking-proxyMode-select"
           @update:value="$emit('update:proxyMode', $event)"
         />
@@ -741,7 +740,7 @@ export default defineComponent({
           <LabeledInput
             :value="serviceCidr"
             :mode="mode"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="!isNew"
             label-key="ack.networking.serviceCidr.label"
             placeholder-key="ack.networking.serviceCidr.placeholder"
             data-testid="ack-networking-serviceCidr-input"
@@ -759,7 +758,7 @@ export default defineComponent({
     <div class="row mb-10">
       <Checkbox
         :value="endpointPublicAccess"
-        :disabled="!isNewOrUnprovisioned"
+        :disabled="!isNew"
         :mode="mode"
         label-key="ack.networking.endpointPublicAccess.label"
         data-testid="ack-networking-endpointPublicAccess"

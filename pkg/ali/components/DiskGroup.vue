@@ -37,9 +37,9 @@ export default {
       type:    Boolean,
       default: false
     },
-    isNewOrUnprovisioned: {
+    disabled: {
       type:    Boolean,
-      default: true
+      default: false
     },
     options: {
       type:    Array,
@@ -168,7 +168,7 @@ export default {
           :key="idx"
           v-model:value="row.value"
           :mode="mode"
-          :is-new-or-unprovisioned="isNewOrUnprovisioned"
+          :disabled="disabled"
           :options="options"
           :loading="loading"
         >
@@ -178,7 +178,7 @@ export default {
             >
               <button
                 type="button"
-                :disabled="!isNewOrUnprovisioned"
+                :disabled="disabled"
                 class="btn role-link"
                 :data-testid="`ack-disk-group-remove-item-${idx}`"
                 :aria-label="t('generic.ariaLabel.remove', {index: idx+1})"
@@ -207,7 +207,7 @@ export default {
       <button
         type="button"
         class="btn role-tertiary add"
-        :disabled="loading || disableAdd"
+        :disabled="loading || disableAdd || disabled"
         :data-testid="`ack-disk-group-add-button`"
         :aria-label="'ack.nodePool.diskGroup.add'"
         role="button"

@@ -77,7 +77,7 @@ export default defineComponent({
     },
 
     showInstanceTypes() {
-      return this.pool.instanceTypes || this.pool._isNewOrUnprovisioned;
+      return this.pool.instanceTypes || this.pool._isNew;
     },
     systemDisk: {
       get() {
@@ -103,7 +103,7 @@ export default defineComponent({
       }
     },
     showDesiredSize() {
-      return this.pool._isNewOrUnprovisioned || !!this.pool.desiredSize;
+      return this.pool._isNew || !!this.pool.desiredSize;
     }
   },
   watch: {
@@ -144,7 +144,7 @@ export default defineComponent({
           const availableZones = res?.AvailableZones?.AvailableZone || [];
 
           availableZones.forEach((zone) => {
-            const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this.isNewOrUnprovisioned;
+            const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this._isNew;
 
             if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
               const availableResources = zone.AvailableResources?.AvailableResource;
@@ -213,7 +213,7 @@ export default defineComponent({
           :mode="mode"
           label-key="ack.nodePool.name.label"
           required
-          :disabled="!pool._isNewOrUnprovisioned"
+          :disabled="!pool._isNew"
         />
       </div>
       <div
@@ -268,7 +268,7 @@ export default defineComponent({
           option-key="value"
           label-key="ack.nodePool.imageId.label"
           required
-          :disabled="!pool._isNewOrUnprovisioned"
+          :disabled="!pool._isNew"
         />
       </div>
     </div>
@@ -280,7 +280,7 @@ export default defineComponent({
         v-model:value="pool.instanceTypes"
         :config="config"
         :mode="mode"
-        :is-new-or-unprovisioned="pool._isNewOrUnprovisioned"
+        :disabled="!pool._isNew"
         :all-instance-types="allInstanceTypes"
         :loading-instance-types="loadingInstanceTypes"
         :zones="zones"
@@ -293,7 +293,7 @@ export default defineComponent({
   <DiskType
     v-model:value="systemDisk"
     :mode="mode"
-    :is-new-or-unprovisioned="pool._isNewOrUnprovisioned"
+    :disabled="!pool._isNew"
     :show-encrypted="false"
     :options="allDiskTypes"
     :loading="loadingDiskTypes"
@@ -304,8 +304,7 @@ export default defineComponent({
   <DiskGroup
     v-model:value="pool.dataDisks"
     :mode="mode"
-    :is-new-or-unprovisioned="pool._isNewOrUnprovisioned"
-    :add-disabled="!pool._isNewOrUnprovisioned"
+    :disabled="!pool._isNew"
     :options="allDiskTypes"
     :loading="loadingDiskTypes"
   />

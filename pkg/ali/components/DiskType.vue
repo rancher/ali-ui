@@ -27,9 +27,9 @@ export default defineComponent({
       type:     Object as PropType<any>,
       required: true
     },
-    isNewOrUnprovisioned: {
+    disabled: {
       type:    Boolean,
-      default: true
+      default: false
     },
     showEncrypted: {
       type:    Boolean,
@@ -70,7 +70,7 @@ export default defineComponent({
         v-model:value="category"
         :mode="mode"
         :options="options"
-        :disabled="!isNewOrUnprovisioned"
+        :disabled="disabled"
         label-key="ack.nodePool.diskCategory.label"
         option-key="value"
         option-label="label"
@@ -83,7 +83,7 @@ export default defineComponent({
         :mode="mode"
         label-key="ack.nodePool.diskSize.label"
         suffix="GiB"
-        :disabled="!isNewOrUnprovisioned"
+        :disabled="disabled"
         required
     />
     </div>
@@ -93,7 +93,7 @@ export default defineComponent({
             v-model:value="encrypted"
             :mode="mode"
             label-key="ack.nodePool.diskEncrypted.label"
-            :disabled="!isNewOrUnprovisioned"
+            :disabled="disabled"
         />
     </div>
     <div class="col span-2 mb-5 ml-30">
