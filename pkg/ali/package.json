@@ -8,7 +8,8 @@
       "catalog.cattle.io/rancher-version": ">= 2.13.0-0",
       "catalog.cattle.io/display-name": "Alibaba Cloud (ACK) Provisioning",
       "catalog.cattle.io/ui-extensions-version": ">= 3.0.0 < 4.0.0",
-      "catalog.cattle.io/certified": "rancher"
+      "catalog.cattle.io/certified": "rancher",
+      "catalog.cattle.io/prime-only": "true"
     }
   },
   "icon":"https://raw.githubusercontent.com/rancher/ali-ui/refs/heads/main/pkg/ali/assets/alibaba.svg",
