@@ -33,6 +33,10 @@ ack:
     unnamed: Unnamed Node Pool
     desiredSize:
       label: Expected Nodes
+    minInstances:
+      label: Min Instances
+    maxInstances:
+      label: Max Instances
     imageId:
       label: Image
     instanceTypes:

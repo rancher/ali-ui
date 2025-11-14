@@ -103,6 +103,9 @@ export default defineComponent({
         this.pool.imageId = this.allImages[neu];
         this.pool.imageType = neu;
       }
+    },
+    showDesiredSize() {
+      return this.pool._isNewOrUnprovisioned || !!this.pool.desiredSize;
     }
   },
   watch: {
@@ -214,7 +217,10 @@ export default defineComponent({
           :disabled="!pool._isNewOrUnprovisioned"
         />
       </div>
-      <div class="col span-3">
+      <div
+        v-if="showDesiredSize"
+        class="col span-3"
+      >
         <LabeledInput
           v-model:value.number="pool.desiredSize"
           :disabled="isView || isEditingImported"
@@ -224,6 +230,30 @@ export default defineComponent({
           :min="1"
           :max="maxPools"
           data-testid="ack-pool-count-input"
+          required
+        />
+      </div>
+      <div
+        v-else
+        class="row"
+      >
+        <LabeledInput
+          v-model:value.number="pool.minInstances"
+          :disabled="true"
+          type="number"
+          :mode="mode"
+          label-key="ack.nodePool.minInstances.label"
+          data-testid="ack-pool-min-instances-input"
+          required
+          class="mr-20"
+        />
+        <LabeledInput
+          v-model:value.number="pool.maxInstances"
+          :disabled="true"
+          type="number"
+          :mode="mode"
+          label-key="ack.nodePool.maxInstances.label"
+          data-testid="ack-pool-max-instances-input"
           required
         />
       </div>
