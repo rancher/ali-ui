@@ -34,6 +34,118 @@ async function getACKOptions(
   return store.dispatch("cluster/request", { url });
 }
 
+async function getPaginatedACKOptions(store: any,
+  alibabaCredentialSecret: string,
+  regionId: string | undefined,
+  resource: string,
+  key: string,
+  extra?: object,
+  clusterId?: string) {
+
+  if (!alibabaCredentialSecret) {
+    return null;
+  }
+
+  let params: QueryParams = {
+    cloudCredentialId: alibabaCredentialSecret,
+    acceptLanguage: "en-US",
+    regionId: "us-east-1",
+  };
+
+  if (!!regionId) {
+    params.regionId = regionId;
+  }
+  if (!!clusterId) {
+    params.clusterId = clusterId;
+  }
+  if (!!extra) {
+    params = { ...params, ...extra };
+  }
+
+  let hasNext = true;
+  const out: any = [];
+  let pageNumber = 1;
+  let curSize = 0;
+  let totalItems = 0;
+  const key1 = key.split('.')[0];
+  const key2 = key.split('.')[1];
+  while (hasNext) {
+    params.pageNumber = pageNumber.toString();
+    const url = addParams(`/meta/${resource}`, params);
+    const res = await store.dispatch("cluster/request", { url });
+    curSize += res?.PageSize ? res.PageSize: 1;
+    totalItems = res?.PageSize ? res.TotalCount: 1;
+    if(res[key1] && res[key1][key2] ){
+      out.push(...res[key1][key2]);
+    }
+    
+    if (curSize >= totalItems){
+      hasNext = false;
+    } else {
+      pageNumber++;
+    }
+
+  }
+  return out;
+}
+
+/**
+ * The response format here is different from other requests, so creating a separate function for it
+ */
+async function getPaginatedClusters(store: any,
+  alibabaCredentialSecret: string,
+  regionId: string | undefined,
+  resource: string,
+  key: string,
+  extra?: object,
+  clusterId?: string) {
+
+  if (!alibabaCredentialSecret) {
+    return null;
+  }
+
+  let params: QueryParams = {
+    cloudCredentialId: alibabaCredentialSecret,
+    acceptLanguage: "en-US",
+    regionId: "us-east-1",
+  };
+
+  if (!!regionId) {
+    params.regionId = regionId;
+  }
+  if (!!clusterId) {
+    params.clusterId = clusterId;
+  }
+  if (!!extra) {
+    params = { ...params, ...extra };
+  }
+
+  let hasNext = true;
+  const out: any = [];
+  let pageNumber = 1;
+  let curSize = 0;
+  let totalItems = 0;
+  while (hasNext) {
+    params.pageNumber = pageNumber.toString();
+    const url = addParams(`/meta/${resource}`, params);
+    const res = await store.dispatch("cluster/request", { url });
+    const pageInfo = res?.page_info;
+    curSize += pageInfo?.page_size ? pageInfo.page_size: 1;
+    totalItems = pageInfo?.total_count ? pageInfo.total_count: 1;
+    if(res[key]){
+      out.push(...res[key]);
+    }
+    
+    if (curSize >= totalItems){
+      hasNext = false;
+    } else {
+      pageNumber++;
+    }
+
+  }
+  return out;
+}
+
 export async function getAlibabaRegions(
   store: Store<any>,
   alibabaCredentialSecret: string,
@@ -75,11 +187,12 @@ export async function getAlibabaClusters(
 ): Promise<any> {
 
   const extra: any = {pageSize: 50}
-  return getACKOptions(
+  return getPaginatedClusters(
     store,
     alibabaCredentialSecret,
     regionId,
     "alibabaClusters",
+    "clusters",
     extra
   );
 }
@@ -121,11 +234,12 @@ export async function getAlibabaResourceGroups(
   regionId?: string
 ): Promise<any> {
   const extra = {pageSize: 100};
-  return getACKOptions(
+  return getPaginatedACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
     "alibabaResourceGroups",
+    "ResourceGroups.ResourceGroup",
     extra
   );
 }
@@ -140,11 +254,12 @@ export async function getAlibabaVpcs(
   if(!!resourceGroupId) {
     extra.resourceGroupId = resourceGroupId;
   }
-  return getACKOptions(
+  return getPaginatedACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
     "alibabaVpcs",
+    'Vpcs.Vpc',
     extra
   );
 }
@@ -176,11 +291,12 @@ export async function getAlibabaVSwitches(
   if (!!resourceGroupId) {
     extra.resourceGroupId = resourceGroupId;
   }
-  return getACKOptions(
+  return getPaginatedACKOptions(
     store,
     alibabaCredentialSecret,
     regionId,
     "alibabaVSwitches",
+    "VSwitches.VSwitch",
     extra
   );
 }

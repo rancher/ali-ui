@@ -77,7 +77,7 @@ export default {
       try {
         const res = await getAlibabaClusters(this.$store, this.credential, this.region );
 
-        this.clusters = res?.clusters?.map((c) => {
+        this.clusters = res?.map((c) => {
           return { name: c.name, id: c.cluster_id };
         }) || [];
       } catch (err) {
