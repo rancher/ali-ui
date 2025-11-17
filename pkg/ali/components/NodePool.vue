@@ -107,7 +107,7 @@ export default defineComponent({
       }
     },
     showDesiredSize() {
-      return this.pool._isNew || !!this.pool.desiredSize;
+      return this.pool._isNew || !(this.pool.minInstances || this.pool.maxInstances);
     }
   },
   watch: {
