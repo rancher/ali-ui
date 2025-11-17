@@ -172,6 +172,28 @@ entries:
       catalog.cattle.io/namespace: cattle-ui-plugin-system
       catalog.cattle.io/os: linux
       catalog.cattle.io/permits-os: linux, windows
+      catalog.cattle.io/prime-only: "true"
+      catalog.cattle.io/rancher-version: '>= 2.13.0-0'
+      catalog.cattle.io/scope: management
+      catalog.cattle.io/ui-component: plugins
+      catalog.cattle.io/ui-extensions-version: '>= 3.0.0 < 4.0.0'
+    apiVersion: v2
+    appVersion: 0.0.1-rc10
+    created: "2025-11-17T20:03:33.428826297Z"
+    description: Create Alibaba Cloud clusters in Rancher
+    digest: ae588350b84d5a4fb9f081a1ed709cca5da2e06063514777d7f23ef54c3e1515
+    icon: https://raw.githubusercontent.com/rancher/ali-ui/refs/heads/main/pkg/ali/assets/alibaba.svg
+    name: ali
+    type: application
+    urls:
+    - assets/ali/ali-0.0.1-rc10.tgz
+    version: 0.0.1-rc10
+  - annotations:
+      catalog.cattle.io/certified: rancher
+      catalog.cattle.io/display-name: Alibaba Cloud (ACK) Provisioning
+      catalog.cattle.io/namespace: cattle-ui-plugin-system
+      catalog.cattle.io/os: linux
+      catalog.cattle.io/permits-os: linux, windows
       catalog.cattle.io/rancher-version: '>= 2.13.0-0'
       catalog.cattle.io/scope: management
       catalog.cattle.io/ui-component: plugins
@@ -186,4 +208,4 @@ entries:
     urls:
     - assets/ali/ali-0.0.1-rc1.tgz
     version: 0.0.1-rc1
-generated: "2025-11-15T02:35:58.135128141Z"
+generated: "2025-11-17T20:03:33.42779748Z"
