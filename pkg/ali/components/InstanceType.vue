@@ -54,6 +54,10 @@ export default defineComponent({
       type:    Object,
       default: () => new Set()
     },
+    rules: {
+      type:    Array,
+      default: () => []
+    }
   },
 
   data() {
@@ -194,6 +198,19 @@ export default defineComponent({
         });
       }
     },
+    validationErrors() {
+      const ruleMessages = [];
+
+      for (const rule of this.rules) {
+        const message = rule(this.value);
+
+        if (!!message ) {
+          ruleMessages.push(message);
+        }
+      }
+
+      return ruleMessages;
+    }
 
   },
   methods: {
@@ -359,4 +376,10 @@ export default defineComponent({
       class="col span-8"
     />
   </div>
+  <p
+    v-if="validationErrors.length > 0"
+    class="mb-10"
+  >
+    {{ validationErrors.join(' ') }}
+  </p>
 </template>

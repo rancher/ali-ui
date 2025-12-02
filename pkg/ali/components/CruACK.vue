@@ -32,6 +32,10 @@ import {
   clusterNameChars,
   clusterNameStart,
   clusterNameLength,
+  nodePoolNames,
+  nodePoolNamesUnique,
+  nodePoolCount,
+  instanceTypeCount
 } from '../util/validation';
 import { SETTING } from '@shell/config/settings';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
@@ -108,8 +112,8 @@ export const DEFAULT_NODE_GROUP_CONFIG = {
   runtime:        'containerd',
   runtimeVersion: '1.6.38',
   vswitchIds:     [],
-
-  _isNew: true,
+  _validation:    {},
+  _isNew:         true,
 };
 
 export default defineComponent({
@@ -177,6 +181,18 @@ export default defineComponent({
       ] : [{
         path:  'name',
         rules: ['nameRequired', 'clusterNameChars', 'clusterNameStart', 'clusterNameLength'],
+      },
+      {
+        path:  'poolName',
+        rules: ['poolNames', 'poolNamesUnique']
+      },
+      {
+        path:  'poolCount',
+        rules: ['poolCount']
+      },
+      {
+        path:  'instanceTypeCount',
+        rules: ['instanceTypeCount']
       },
       ],
 
@@ -286,11 +302,15 @@ export default defineComponent({
     },
     fvExtraRules() {
       return {
-        nameRequired:        requiredInCluster(this, 'nameNsDescription.name.label', 'normanCluster.name'),
-        clusterNameChars:    clusterNameChars(this),
-        clusterNameStart:    clusterNameStart(this),
-        clusterNameLength:   clusterNameLength(this),
-        importedName:        requiredInCluster(this, 'ali.import.label', 'config.clusterName')
+        nameRequired:            requiredInCluster(this, 'nameNsDescription.name.label', 'normanCluster.name'),
+        clusterNameChars:        clusterNameChars(this),
+        clusterNameStart:        clusterNameStart(this),
+        clusterNameLength:       clusterNameLength(this),
+        importedName:            requiredInCluster(this, 'ali.import.label', 'config.clusterName'),
+        poolNames:               nodePoolNames(this),
+        poolNamesUnique:         nodePoolNamesUnique(this),
+        poolCount:               nodePoolCount(this),
+        instanceTypeCount:       instanceTypeCount(this),
       };
     },
 
@@ -519,7 +539,11 @@ export default defineComponent({
       }
       this.loadingInstanceTypes = false;
     },
+    poolIsValid(pool) {
+      const poolValidation = pool?._validation || {};
 
+      return !Object.values(poolValidation).includes(false);
+    },
   }
 });
 </script>
@@ -698,6 +722,7 @@ export default defineComponent({
             :key="pool._id"
             :label="pool.name"
             :name="`${pool.name || t('ack.nodePool.unnamed')}`"
+            :error="!poolIsValid(pool)"
           >
             <NodePool
               :mode="mode"
@@ -709,6 +734,11 @@ export default defineComponent({
               :loading-images="loadingImages"
               :loading-instance-types="loadingInstanceTypes"
               :zones="zones"
+              :validation-rules="{
+                name: fvGetAndReportPathRules('poolName'),
+                count: fvGetAndReportPathRules('poolCount'),
+                instanceTypeCount: fvGetAndReportPathRules('instanceTypeCount')
+              }"
               @error="e=>errors.push(e)"
             />
           </Tab>
