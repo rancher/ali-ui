@@ -159,12 +159,10 @@ export const nodePoolCount = (ctx:any) => {
     
     const isBasic = type === 'ack.standard';
     let errMsg = !isBasic? ctx.t('validation.nodeCountPro'): ctx.t('validation.nodeCountBasic');
-    console.log(desiredSize, _isNew)
     const min = 0;
 
     if (desiredSize || desiredSize === 0) {
       const max = !_isNew ? 500 : ( isBasic ? 10 : 5000 );
-      console.log(desiredSize, _isNew, max)
       return desiredSize >= min && desiredSize <= max ? undefined : errMsg;
     } else {
       let allValid = true;
@@ -173,7 +171,6 @@ export const nodePoolCount = (ctx:any) => {
         const { desiredSize = 0, _isNew } = pool;
         
         const max = !_isNew ? 500 : ( isBasic ? 10 : 5000 );
-        console.log(desiredSize, _isNew, max)
 
         if (desiredSize < min || desiredSize > max) {
           pool._validation['_validCount'] = false;

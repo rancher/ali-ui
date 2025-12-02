@@ -161,6 +161,16 @@ export default defineComponent({
           rootObject: this,
           rules:      ['zoneIdsRequired']
         },
+        {
+          path:       'vswitchIds',
+          rootObject: this,
+          rules:      ['vswitchIdsCount']
+        },
+        {
+          path:       'podVswitchIds',
+          rootObject: this,
+          rules:      ['podVswitchIdsRequired']
+        },
       ],
     };
   },
@@ -189,6 +199,12 @@ export default defineComponent({
       return {
         zoneIdsRequired: (val) => {
           return this.chooseVPC || (val && val.length > 0) ? undefined : this.t('validation.zoneIdsRequired');
+        },
+        vswitchIdsCount: () => {
+          return !this.chooseVPC || (this.vswitchIds && this.vswitchIds.length > 0 && this.vswitchIds.length < 6) ? undefined : this.t('validation.vswitchIds');
+        },
+        podVswitchIdsRequired: () => {
+          return !this.chooseVPC || this.isFlannel || (this.podVswitchIds && this.podVswitchIds.length > 0) ? undefined : this.t('validation.podVswitchIds');
         },
         containerCidrRequired: (val) => {
           return !this.isFlannel || !!val ? undefined : this.t('validation.containerCIDRRequired');
@@ -645,6 +661,7 @@ export default defineComponent({
               :disabled="!isNew"
               data-testid="ack-networking-vswitchIds-input"
               required
+              :rules="fvGetAndReportPathRules('vswitchIds')"
               @update:value="$emit('update:vswitchIds', $event)"
             />
           </div>
@@ -743,6 +760,7 @@ export default defineComponent({
           :disabled="!isNew"
           data-testid="ack-networking-podVswitchIds-input"
           required
+          :rules="fvGetAndReportPathRules('podVswitchIds')"
           @update:value="$emit('update:podVswitchIds', $event)"
         />
         <div
