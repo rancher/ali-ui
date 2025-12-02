@@ -60,7 +60,13 @@ export default defineComponent({
     isInactive: {
       type:    Boolean,
       default: false
-    }
+    },
+    validationRules: {
+      type:    Object,
+      default: () => {
+        return {};
+      }
+    },
   },
   emits: ['error'],
 
@@ -199,8 +205,12 @@ export default defineComponent({
         this.$emit('error', this.t('ack.errors.diskTypes', { e: parsedError || err }));
       }
       this.loadingDiskTypes = false;
-    }
+    },
+    poolSizeValidator() {
+      const _isNew = this.pool._isNew;
 
+      return (val) => this.validationRules?.count?.[0](val, _isNew);
+    }
   },
 
 });
@@ -218,6 +228,7 @@ export default defineComponent({
           label-key="ack.nodePool.name.label"
           required
           :disabled="!pool._isNew"
+          :rules="validationRules.name"
         />
       </div>
       <div
@@ -234,6 +245,7 @@ export default defineComponent({
           :max="maxPools"
           data-testid="ack-pool-count-input"
           required
+          :rules="[poolSizeValidator()]"
         />
       </div>
       <div
@@ -288,6 +300,7 @@ export default defineComponent({
         :all-instance-types="allInstanceTypes"
         :loading-instance-types="loadingInstanceTypes"
         :zones="zones"
+        :rules="validationRules.instanceTypeCount"
       />
     </div>
   </div>

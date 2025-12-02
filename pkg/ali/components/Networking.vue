@@ -149,7 +149,7 @@ export default defineComponent({
         {
           path:       'containerCidr',
           rootObject: this,
-          rules:      ['validCIDR', 'cidrCannotMatchVswitchIP']
+          rules:      ['containerCidrRequired', 'validCIDR', 'cidrCannotMatchVswitchIP', 'containerCidrCannotMatchServiceCidr']
         },
         {
           path:       'serviceCidr',
@@ -190,6 +190,15 @@ export default defineComponent({
         zoneIdsRequired: (val) => {
           return this.chooseVPC || (val && val.length > 0) ? undefined : this.t('validation.zoneIdsRequired');
         },
+        containerCidrRequired: (val) => {
+          return !this.isFlannel || !!val ? undefined : this.t('validation.containerCIDRRequired');
+        },
+        containerCidrCannotMatchServiceCidr: (val) => {
+          const serviceCIDR = this.serviceCidr;
+
+          return doCidrOverlap(val, serviceCIDR) ? this.t('validation.containerCIDROverlapService') : undefined;
+        },
+
         validCIDR:       (val) => {
           return !val || isValidCIDR(val) ? undefined : this.t('validation.invalidCIDR');
         },
@@ -409,6 +418,29 @@ export default defineComponent({
   },
 
   methods: {
+    // A workaround to avoid modifying shell's validation.
+    // The original fvGetPathErrors does not run validation rules for a path if its value is an empty array.
+    fvGetPathErrors(paths = []) {
+      const messages = paths.reduce((acc, path) => {
+        const pathErrors = [];
+        const relevantRules = this.fvGetPathRules(path);
+        let relevantValues = this.fvGetPathValues(path).map(this.fvGetValues);
+
+        if (relevantValues.length === 0) {
+          relevantValues = [undefined];
+        }
+
+        relevantRules.forEach((rule) => {
+          relevantValues.forEach((value) => {
+            pathErrors.push(rule(value));
+          });
+        });
+
+        return [...acc, ...pathErrors].filter(Boolean);
+      }, []);
+
+      return messages;
+    },
     async getResourceGroups() {
       this.loadingResourceGroups = true;
       this.allResourceGroups = [];
