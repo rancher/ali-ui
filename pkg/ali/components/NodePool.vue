@@ -8,9 +8,7 @@ import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
 import { getDataDisksForInstanceTypes } from '../util/ack';
-
-const STATUS_AVAILABLE = 'Available';
-const DATA_DISK = 'DataDisk';
+import { STATUS_AVAILABLE, DATA_DISK } from '../util/shared';
 
 export default defineComponent({
   name: 'ACKNodePool',

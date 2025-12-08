@@ -9,20 +9,22 @@ import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import { doCidrOverlap, isValidCIDR } from '../util/validation';
 import { getAlibabaResourceGroups, getAlibabaVpcs, getAlibabaZones, getAlibabaVSwitches } from '../util/ack';
-
-const SERVICE_CIDR_1 = '172.16.0.0/16';
-const SERVICE_CIDR_2 = '192.168.0.0/16';
-
-const CONTAINER_CIDR_1 = '172.16.0.0/12';
-const CONTAINER_CIDR_2 = '192.168.0.0/16';
-const CONTAINER_CIDR_3 = '10.0.0.0/8';
-
-const FLANNEL = 'flannel';
-const TERWAY = 'terway';
-const FLANNEL_ADDON = 'flannel';
-const TERWAY_ADDON = 'terway-eniip';
-
-const MAX_NODE_CIDR_MASK = 28;
+import {
+  FLANNEL,
+  TERWAY,
+  FLANNEL_ADDON,
+  TERWAY_ADDON,
+  MAX_NODE_CIDR_MASK,
+  CONTAINER_CIDR_1,
+  CONTAINER_CIDR_2,
+  CONTAINER_CIDR_3,
+  SERVICE_CIDR_1,
+  SERVICE_CIDR_2,
+  PROXY_MODE_IPVS,
+  PROXY_MODE_IPTABLES,
+  MAX_NODES,
+  MIN_NODES,
+} from '../util/shared';
 
 export default defineComponent({
   name: 'Networking',
@@ -99,7 +101,7 @@ export default defineComponent({
     },
     proxyMode: {
       type:    String,
-      default: 'ipvs'
+      default: PROXY_MODE_IPVS
     },
     serviceCidr: {
       type:    String,
@@ -248,12 +250,12 @@ export default defineComponent({
     proxyModeOptions() {
       return [
         {
-          value:    'iptables',
-          label:    this.t('ack.networking.proxyMode.options.iptables'),
+          value:  PROXY_MODE_IPTABLES,
+          label:  this.t('ack.networking.proxyMode.options.iptables'),
         },
         {
-          value: 'ipvs',
-          label: this.t('ack.networking.proxyMode.options.ipvs')
+          value:  PROXY_MODE_IPVS,
+          label:  this.t('ack.networking.proxyMode.options.ipvs')
         }
       ];
     },
@@ -261,7 +263,7 @@ export default defineComponent({
       const out = [];
       let val = MAX_NODE_CIDR_MASK;
 
-      for (let i = 16; i <= 256; i *= 2) {
+      for (let i = MIN_NODES; i <= MAX_NODES; i *= 2) {
         out.push({
           value:    val,
           label:    i,
