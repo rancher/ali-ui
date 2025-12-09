@@ -1,7 +1,7 @@
 {
   "name": "ali",
   "description": "Create Alibaba Cloud clusters in Rancher",
-  "version": "1.0.0",
+  "version": "1.0.1-rc1",
   "private": false,
   "rancher": {
     "annotations": {
