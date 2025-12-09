@@ -1,45 +1,38 @@
 import ipaddr from "ipaddr.js";
 import { get, set } from '@shell/utils/object';
+
+// Converts ip into 32 long integer by breaking it down into octets,
+// shifting existing value by 8 bits and adding new octet converted to base 10
+// In the end, we need to do a zero fill right shift to ensure final value is treated 
+// as unsigned 32-bit integer
+
 function ipToLong(ip: string): number {
   return (
-    ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0
+    ip.split(".").reduce((cur, octet) => (cur << 8) + parseInt(octet, 10), 0) >>> 0
   );
 }
 
 function getCidrRange(cidr: string): { start: number; end: number } | null {
-  const parts = cidr.split("/");
+  try {
+    const [ip, prefix] = ipaddr.parseCIDR(cidr);
 
-  if (parts.length !== 2) {
-    return null;
-  }
-
-  const [ip, prefString] = parts;
-  const prefix = parseInt(prefString, 10);
-
-  if (isNaN(prefix) || prefix < 0 || prefix > 32) {
-    return null; 
-  }
-  const ipParts = ip.split(".");
-
-  if (ipParts.length !== 4 ) {
+    if (ip.kind() !== 'ipv4') {
       return null;
+    }
+
+    const ipLong = ipToLong(ip.toString());
+    // Create a subnet mask
+    const mask = (0xffffffff << (32 - prefix)) >>> 0;
+    // Get a start of the ip range
+    const start = ipLong & mask;
+    // Get an end of the ip range
+    const end = start | (~mask >>> 0);
+
+    return { start, end };
+  } catch (e) {
+    //We can swallow this error
+    return null;  
   }
-  for( let i= 0 ; i< ipParts.length ; i++){
-    const part = ipParts[i];
-    if(isNaN(parseInt(part, 10)) ||
-      parseInt(part, 10) < 0 ||
-      parseInt(part, 10) > 255){
-        return null;
-      }
-  }
-
-  const ipLong = ipToLong(ip);
-  const mask = (0xffffffff << (32 - prefix)) >>> 0;
-
-  const start = ipLong & mask;
-  const end = start | (~mask >>> 0);
-
-  return { start, end };
 }
 
 function nameLength(name: string): boolean {
@@ -56,9 +49,6 @@ function nameStart(name: string): boolean {
 
 export function doCidrOverlap(cidr1: string, cidr2: string): boolean {
   if (!isValidCIDR(cidr1) || !isValidCIDR(cidr2)) {
-    return false;
-  }
-  if (!cidr1 || !cidr2) {
     return false;
   }
   const range1 = getCidrRange(cidr1);

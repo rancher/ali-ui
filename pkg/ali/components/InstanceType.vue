@@ -378,8 +378,14 @@ export default defineComponent({
   </div>
   <p
     v-if="validationErrors.length > 0"
-    class="mb-10"
+    class="mb-10 error"
   >
     {{ validationErrors.join(' ') }}
   </p>
 </template>
+
+<style lang="scss" scoped>
+.error{
+  color: var(--error);
+}
+</style>
