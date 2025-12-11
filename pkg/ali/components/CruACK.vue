@@ -41,80 +41,16 @@ import { SETTING } from '@shell/config/settings';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
 import { RadioGroup } from '@components/Form/Radio';
 import { STATES_ENUM } from '@shell/plugins/dashboard-store/resource-class';
-
-const DEFAULT_REGION = 'us-east-1';
-const DEFAULT_SERVICE_CIDR = '192.168.0.0/16';
-const BASIC_CLUSTER_SPEC = 'ack.standard';
-const PRO_CLUSTER_SPEC = 'ack.pro.small';
-
-const importedDefaultAckConfig = {
-  clusterName:    '',
-  clusterId:      '',
-  imported:       true,
-  clusterType:    'ManagedKubernetes',
-  regionId:    DEFAULT_REGION,
-};
-
-export const defaultAckConfig = {
-  clusterName:          '',
-  imported:             false,
-  tags:                 {},
-  clusterType:          'ManagedKubernetes',
-  clusterSpec:          BASIC_CLUSTER_SPEC,
-  serviceCidr:          DEFAULT_SERVICE_CIDR,
-  snatEntry:            true,
-  endpointPublicAccess: true,
-  proxyMode:            'ipvs',
-  addons:               [
-    { name: 'terway-eniip' }
-  ],
-};
-
-const defaultCluster = {
-  labels:                              {},
-  annotations:                         {},
-  fleetAgentDeploymentCustomization: {
-    overrideAffinity:             {},
-    appendTolerations:            [],
-    overrideResourceRequirements: {}
-  },
-  clusterAgentDeploymentCustomization: {
-    overrideAffinity:             {},
-    appendTolerations:            [],
-    overrideResourceRequirements: {}
-  },
-};
-const importedDefaultCluster = {
-  labels:                  {},
-  annotations:             {},
-};
-
-export const DEFAULT_NODE_GROUP_CONFIG = {
-  name:          'nodePool-0',
-  instanceTypes: [
-    'ecs.g6.xlarge',
-    'ecs.g7.xlarge',
-    'ecs.u1-c1m4.xlarge',
-    'ecs.g8i.xlarge'
-  ],
-  systemDiskCategory: 'cloud_essd',
-  systemDiskSize:     20,
-  dataDisks:          [
-    {
-      category:  'cloud_essd',
-      size:      40,
-      encrypted: 'false'
-    }
-  ],
-  desiredSize:    3,
-  imageId:        'aliyun_3_x64_20G_alibase_20241218.vhd',
-  imageType:      'AliyunLinux3',
-  runtime:        'containerd',
-  runtimeVersion: '1.6.38',
-  vswitchIds:     [],
-  _validation:    {},
-  _isNew:         true,
-};
+import {
+  DEFAULT_REGION,
+  DEFAULT_CLUSTER,
+  IMPORTED_DEFAULT_CLUSTER,
+  DEFAULT_NODE_GROUP_CONFIG,
+  IMPORTED_DEFAULT_ACK_CONFIG,
+  BASIC_CLUSTER_SPEC,
+  PRO_CLUSTER_SPEC,
+  DEFAULT_ACK_CONFIG
+} from '../util/shared';
 
 export default defineComponent({
   name:       'CruACK',
@@ -219,15 +155,15 @@ export default defineComponent({
       // track original version on edit to ensure we don't offer k8s downgrades
       this.originalVersion = this.normanCluster?.aliConfig?.kubernetesVersion || '';
     } else {
-      const base = !this.isImport ? defaultCluster : importedDefaultCluster ;
+      const base = !this.isImport ? DEFAULT_CLUSTER : IMPORTED_DEFAULT_CLUSTER ;
 
       this.normanCluster = await store.dispatch('rancher/create', { type: NORMAN.CLUSTER, ...base }, { root: true });
     }
     if (this.isImport) {
-      this.normanCluster.aliConfig = cloneDeep(importedDefaultAckConfig);
+      this.normanCluster.aliConfig = cloneDeep(IMPORTED_DEFAULT_ACK_CONFIG);
     } else {
       if (!this.normanCluster.aliConfig) {
-        this.normanCluster.aliConfig = { ...defaultAckConfig };
+        this.normanCluster.aliConfig = { ...DEFAULT_ACK_CONFIG };
       }
       if (this.mode === _CREATE && (!this.normanCluster?.aliConfig?.nodePools || this.normanCluster?.aliConfig?.nodePools.length === 0)) {
         const pool = cloneDeep(DEFAULT_NODE_GROUP_CONFIG);
