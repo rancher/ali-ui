@@ -177,6 +177,9 @@ export const nodePoolCount = (ctx:any) => {
 
 export const instanceTypeCount = (ctx:any) => {
   return (instanceTypes?: Array<string>) => {  
+    if(ctx.isEdit){
+      return undefined;
+    }
     if(instanceTypes){
       return instanceTypes.length > 0 && instanceTypes.length <= 20 ? undefined : ctx.t('validation.instanceTypeCount');
     } else {
