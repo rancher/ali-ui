@@ -180,7 +180,7 @@ export default defineComponent({
     };
   },
 
-  async created() {
+  created() {
     this.getResourceGroups();
     this.getVPCs();
     this.getVswitches();
@@ -589,15 +589,17 @@ export default defineComponent({
     async selectFirstVPC() {
       this.emptyVPCSection();
       await this.getVPCs();
+      if (this.chooseVPC) {
       // Need to wait for the VPC section to actually become empty
       // otherwise, watch might not get triggered if old value matches new value
-      this.$nextTick(() => {
-        const firstVpc = Object.keys(this.allVPCs)[0];
+        this.$nextTick(() => {
+          const firstVpc = Object.keys(this.allVPCs)[0];
 
-        if (firstVpc) {
-          this.$emit('update:vpcId', firstVpc);
-        }
-      });
+          if (firstVpc) {
+            this.$emit('update:vpcId', firstVpc);
+          }
+        });
+      }
     }
   }
 });
