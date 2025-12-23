@@ -231,7 +231,7 @@ export default defineComponent({
         const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || this.disabled;
 
         if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
-          const availableResources = zone.AvailableResources?.AvailableResource;
+          const availableResources = zone.AvailableResources?.AvailableResource || [];
 
           availableResources.forEach((resource) => {
             if (resource.Type === INSTANCE_TYPE) {

@@ -72,9 +72,6 @@ export default defineComponent({
 
   data() {
     return {
-      osDiskTypeOptions:       ['Managed', 'Ephemeral'],
-      modeOptions:             ['User', 'System'],
-      maxPools:                5000,
       loadingDiskTypes:        false,
       allDiskTypes:            [],
     };
@@ -88,6 +85,11 @@ export default defineComponent({
 
     showInstanceTypes() {
       return this.pool.instanceTypes || this.pool._isNew;
+    },
+    maxPools() {
+      const isBasic = this.config.clusterSpec === 'ack.standard';
+
+      return !this.pool._isNew ? 500 : ( isBasic ? 10 : 5000 );
     },
     systemDisk: {
       get() {
@@ -157,7 +159,7 @@ export default defineComponent({
             const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this._isNew;
 
             if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
-              const availableResources = zone.AvailableResources?.AvailableResource;
+              const availableResources = zone.AvailableResources?.AvailableResource || [];
 
               availableResources.forEach((resource) => {
                 if (resource.Type === DATA_DISK) {
@@ -236,9 +238,8 @@ export default defineComponent({
         class="col span-3"
       >
         <LabeledInput
-          v-model:value.number="pool.desiredSize"
+          v-model:value="pool.desiredSize"
           :disabled="isView || isInactive"
-          type="number"
           :mode="mode"
           label-key="ack.nodePool.desiredSize.label"
           :min="1"

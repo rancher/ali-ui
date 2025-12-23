@@ -144,6 +144,9 @@ export const nodePoolNamesUnique = (ctx: any) => {
 
 export const nodePoolCount = (ctx:any) => {
   return (desiredSize?: number, _isNew = false) => {
+    if(!!desiredSize && (!Number.isInteger(+desiredSize) || `${ desiredSize }`.match(/\.+/g))){
+      return ctx.t('validation.nodeCountNumeric');
+    }
     const config = get(ctx, 'config');
     const type = config.clusterSpec;
     
@@ -158,7 +161,10 @@ export const nodePoolCount = (ctx:any) => {
       let allValid = true;
 
       ctx.nodePools.forEach((pool: any) => {
-        const { desiredSize = 0, _isNew } = pool;
+        const { desiredSize, _isNew } = pool;
+        if(!desiredSize || !Number.isInteger(+desiredSize) || `${ desiredSize }`.match(/\.+/g)){
+          return ctx.t('validation.nodeCountNumeric');
+        }
         
         const max = !_isNew ? 500 : ( isBasic ? 10 : 5000 );
 
@@ -177,9 +183,6 @@ export const nodePoolCount = (ctx:any) => {
 
 export const instanceTypeCount = (ctx:any) => {
   return (instanceTypes?: Array<string>) => {  
-    if(ctx.isEdit){
-      return undefined;
-    }
     if(instanceTypes){
       return instanceTypes.length > 0 && instanceTypes.length <= 20 ? undefined : ctx.t('validation.instanceTypeCount');
     } else {
@@ -187,7 +190,7 @@ export const instanceTypeCount = (ctx:any) => {
 
       ctx.nodePools.forEach((pool: any) => {
         const { instanceTypes = [] } = pool;
-        if(!(instanceTypes.length > 0 && instanceTypes.length <= 20)){
+        if(pool._isNew && !(instanceTypes.length > 0 && instanceTypes.length <= 20)){
           pool._validation['_validInstanceTypeCount'] = false;
           allValid = false;
         } else {

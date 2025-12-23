@@ -162,6 +162,11 @@ export default defineComponent({
           rules:      ['zoneIdsRequired']
         },
         {
+          path:       'vpcId',
+          rootObject: this,
+          rules:      ['vpcIdRequired']
+        },
+        {
           path:       'vswitchIds',
           rootObject: this,
           rules:      ['vswitchIdsCount']
@@ -175,11 +180,12 @@ export default defineComponent({
     };
   },
 
-  created() {
+  async created() {
     this.getResourceGroups();
-    this.getZones();
     this.getVPCs();
     this.getVswitches();
+    this.getZonesAndUpdateZoneIds();
+    this.zonesChanged();
   },
 
   computed: {
@@ -194,7 +200,6 @@ export default defineComponent({
     isNew() {
       return this.mode === _CREATE || this.mode === _IMPORT;
     },
-
     fvExtraRules() {
       return {
         zoneIdsRequired: (val) => {
@@ -204,7 +209,10 @@ export default defineComponent({
           return !this.chooseVPC || (this.vswitchIds && this.vswitchIds.length > 0 && this.vswitchIds.length < 6) ? undefined : this.t('validation.vswitchIds');
         },
         podVswitchIdsRequired: () => {
-          return !this.chooseVPC || this.isFlannel || (this.podVswitchIds && this.podVswitchIds.length > 0) ? undefined : this.t('validation.podVswitchIds');
+          return !this.isNew || !this.chooseVPC || this.isFlannel || (this.podVswitchIds && this.podVswitchIds.length > 0) ? undefined : this.t('validation.podVswitchIds');
+        },
+        vpcIdRequired: () => {
+          return !this.isNew || !this.chooseVPC || this.isFlannel || !!this.vpcId ? undefined : this.t('validation.vpcs');
         },
         containerCidrRequired: (val) => {
           return !this.isFlannel || !!val ? undefined : this.t('validation.containerCIDRRequired');
@@ -325,43 +333,35 @@ export default defineComponent({
 
     'config.regionId': {
       handler() {
+        this.getResourceGroups();
+        this.getZonesAndUpdateZoneIds();
+        this.zonesChanged();
         if (this.isNew) {
           this.$emit('update:resourceGroupId', '');
           this.$emit('update:zoneIds', []);
-          this.emptyVPCSection();
+          this.selectFirstVPC();
         }
-        this.getResourceGroups();
-        this.getZones();
       },
       immediate: true
     },
     'config.alibabaCredentialSecret': {
       handler() {
+        this.getResourceGroups();
+        this.getZonesAndUpdateZoneIds();
+        this.zonesChanged();
         if (this.isNew) {
           this.$emit('update:resourceGroupId', '');
           this.$emit('update:zoneIds', []);
-          this.emptyVPCSection();
+          this.selectFirstVPC();
         }
-        this.getResourceGroups();
-        this.getZones();
       },
       immediate: true
     },
     resourceGroupId: {
       async handler() {
-        await this.getVPCs();
         if (this.chooseVPC) {
           if (this.isNew) {
-            this.emptyVPCSection();
-            // Need to wait for the VPC section to actually become empty
-            // otherwise, watch might not get triggered if old value matches new value
-            this.$nextTick(() => {
-              const firstVpc = Object.keys(this.allVPCs)[0];
-
-              if (firstVpc) {
-                this.$emit('update:vpcId', firstVpc);
-              }
-            });
+            this.selectFirstVPC();
           }
         }
       },
@@ -404,6 +404,7 @@ export default defineComponent({
           this.$emit('update:podVswitchIds', []);
           if (this.chooseVPC) {
             await this.getVswitches();
+            this.zonesChanged();
             const firstVswitch = Object.keys(this.allVSwitches)[0];
 
             this.$emit('update:vswitchIds', !firstVswitch ? [] : [firstVswitch]);
@@ -518,7 +519,6 @@ export default defineComponent({
             label, cidr: vswitch.CidrBlock, zoneId: vswitch.ZoneId
           };
         });
-        this.zonesChanged();
       } catch (err) {
         const parsedError = err.error || '';
 
@@ -534,15 +534,18 @@ export default defineComponent({
         const zones = (res?.Zones?.Zone || []).map((zone) => ({ value: zone.ZoneId, label: zone.LocalName }));
 
         this.allAvailabilityZones = zones;
-        if (this.isNew && !this.chooseVPC) {
-          this.$emit('update:zoneIds', zones.map((z) => z.value));
-        }
       } catch (err) {
         const parsedError = err.error || '';
 
         this.$emit('error', this.t('ack.errors.zones', { e: parsedError || err }));
       }
       this.loadingAvailabilityZones = false;
+    },
+    async getZonesAndUpdateZoneIds() {
+      await this.getZones();
+      if (this.isNew && !this.chooseVPC) {
+        this.$emit('update:zoneIds', this.allAvailabilityZones.map((z) => z.value));
+      }
     },
     zonesChanged() {
       let zones = [];
@@ -582,8 +585,20 @@ export default defineComponent({
       this.$emit('update:vpcId', '');
       this.$emit('update:vswitchIds', []);
       this.$emit('update:podVswitchIds', []);
-    }
+    },
+    async selectFirstVPC() {
+      this.emptyVPCSection();
+      await this.getVPCs();
+      // Need to wait for the VPC section to actually become empty
+      // otherwise, watch might not get triggered if old value matches new value
+      this.$nextTick(() => {
+        const firstVpc = Object.keys(this.allVPCs)[0];
 
+        if (firstVpc) {
+          this.$emit('update:vpcId', firstVpc);
+        }
+      });
+    }
   }
 });
 </script>
@@ -647,6 +662,7 @@ export default defineComponent({
               :multiple="false"
               data-testid="ack-networking-vpcid-dropdown"
               required
+              :rules="fvGetAndReportPathRules('vpcId')"
               @update:value="$emit('update:vpcId', $event)"
             />
           </div>
@@ -683,6 +699,7 @@ export default defineComponent({
             :taggable="true"
             required
             :rules="fvGetAndReportPathRules('zoneIds')"
+            :requireDirty="false"
             @update:value="$emit('update:zoneIds', $event)"
           />
         </div>
