@@ -35,7 +35,7 @@ export class ACKProvisioner implements IClusterProvisioner {
   }
 
   get hidden(): boolean {
-    return !isProviderEnabled(this.context, this.id) && isRancherPrime();
+    return !isProviderEnabled(this.context, this.id) || !isRancherPrime();
   }
   
   get prime(): boolean {
