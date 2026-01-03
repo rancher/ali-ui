@@ -11,7 +11,14 @@ import { getAlibabaInstanceTypes } from '../util/ack';
 import SortableTable from '@shell/components/SortableTable/index.vue';
 import { STATUS_AVAILABLE, INSTANCE_TYPE, WITH_STOCK, WITHOUT_STOCK, INSTANCE_TYPE_COLUMNS } from '../util/shared';
 defineOptions({ name: 'InstanceType' });
-
+interface InstanceTypeRow {
+  instanceFamily: string;
+  vcpus: number | string;
+  memory: number | string;
+  stock: string;
+  zones: string[];
+  instanceType?: string;
+}
 interface Props {
   mode?: string;
   value: string[];
@@ -37,8 +44,8 @@ const { t } = useI18n(store);
 
 const cpu = ref<number | undefined>(undefined);
 const memory = ref<number | undefined>(undefined);
-const instanceTypeOptions = ref<any[]>([]);
-const typesDictionary = ref<any>({});
+const instanceTypeOptions = ref<InstanceTypeRow[]>([]);
+const typesDictionary = ref<Record<string, InstanceTypeRow>>({});
 const localInstanceTypes = ref<any>([]);
 
 const instanceTypesList = computed({
@@ -66,7 +73,7 @@ const instanceTypesList = computed({
     });
   },
   set: (neu: { label: string }[]) => {
-    const newInstanceTypes = neu.map((instanceType: any) => {
+    const newInstanceTypes = neu.map((instanceType: { label: string }) => {
       return instanceType.label.split(' - ')[0].trim();
     });
     emit('update:value', newInstanceTypes)
@@ -99,7 +106,8 @@ function toggleInstanceType(instanceType: string, add: boolean) {
 
 };
 function formatInstanceTypesForTable() {
-  const typesDictionaryNew = {} as any;
+  const typesDictionaryNew: Record<string, InstanceTypeRow> = {};
+
   const availableZones = localInstanceTypes.value?.AvailableZones?.AvailableZone || [];
 
   availableZones.forEach((zone: any) => {
@@ -155,7 +163,7 @@ function formatInstanceTypesForTable() {
     }
   });
   const formatted = Object.entries(typesDictionaryNew).map(([key, val]) => {
-    (val).instanceType = key;
+    val.instanceType = key;
 
     return val;
   });

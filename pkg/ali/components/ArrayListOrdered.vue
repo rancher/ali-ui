@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import debounce from 'lodash/debounce';
 import { _EDIT, _VIEW } from '@shell/config/query-params';
@@ -6,6 +6,9 @@ import { removeAt } from '@shell/utils/array';
 import { clone } from '@shell/utils/object';
 import Tag from '@shell/components/Tag.vue';
 
+interface OrderedRow {
+  value: any;
+}
 const emit = defineEmits(['add', 'remove', 'update:value']);
 const props = defineProps({
   value: {
@@ -42,8 +45,9 @@ const props = defineProps({
   }
 });
 
+
 const input = (Array.isArray(props.value) ? props.value : []).slice();
-const rows = ref([]);
+const rows = ref<OrderedRow[]>([]);
 
 for ( const value of input ) {
   rows.value.push({ value });
@@ -106,13 +110,13 @@ watch(
 /**
  * Remove item and emits removed row and its own index value
  */
-function remove(row, index) {
+ function remove(row: OrderedRow, index: number) {
   emit('remove', { row, index });
   removeAt(rows.value, index);
   queueUpdate();
 }
 
-function moveUp(index) {
+function moveUp(index: number) {
   if (index > 0) {
     const element = rows.value[index];
 
@@ -123,7 +127,7 @@ function moveUp(index) {
   }
 }
 
-function moveDown(index) {
+function moveDown(index: number) {
   if (index < rows.value.length - 1) {
     const element = rows.value[index];
 

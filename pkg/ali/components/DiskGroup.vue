@@ -6,7 +6,9 @@ import { removeAt } from '@shell/utils/array';
 import { clone } from '@shell/utils/object';
 import DiskType from './DiskType.vue';
 import { DEFAULT_DISK_VALUE } from '../util/shared';
-
+interface DiskRow {
+  value: any;
+}
 const emit = defineEmits(['add', 'remove', 'update:value']);
 const props = defineProps({
   value: {
@@ -40,7 +42,7 @@ const props = defineProps({
 });
 
 const input = (Array.isArray(props.value) ? props.value : []).slice();
-const rows = ref([]);
+const rows = ref<DiskRow[]>([]);
 
 for ( const value of input ) {
   rows.value.push({ value });
@@ -114,7 +116,7 @@ function add() {
 /**
  * Remove item and emits removed row and its own index value
  */
-function remove(row, index) {
+function remove(row: DiskRow, index: number) {
   emit('remove', { row, index });
   removeAt(rows.value, index);
   queueUpdate();
