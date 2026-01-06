@@ -114,7 +114,7 @@ function formatInstanceTypesForTable() {
     const zoneAllowed = props.zones.size === 0 || (zone.ZoneId && props.zones.has(zone.ZoneId)) || props.disabled;
 
     if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
-      const availableResources = zone.AvailableResources?.AvailableResource;
+      const availableResources = zone.AvailableResources?.AvailableResource || [];
 
       availableResources.forEach((resource: any) => {
         if (resource.Type === INSTANCE_TYPE) {
