@@ -33,13 +33,13 @@ const emit = defineEmits(['add', 'remove', 'update:value']);
 const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<DiskRow[]>([]);
 
-for ( const value of input ) {
-  rows.value.push({ value });
+for ( const val of input ) {
+  rows.value.push({ value: val });
 }
 if ( !rows.value.length ) {
-  const value = clone(DEFAULT_DISK_VALUE);
+  const val = clone(DEFAULT_DISK_VALUE);
 
-  rows.value.push({ value });
+  rows.value.push({ value: val });
 }
 
 const isView = computed(() => {
@@ -60,10 +60,10 @@ const update = () => {
   const out = [];
 
   for ( const row of rows.value ) {
-    const value = row.value;
+    const val = row.value;
 
-    if ( typeof value !== 'undefined' ) {
-      out.push(value);
+    if ( typeof val !== 'undefined' ) {
+      out.push(val);
     }
   }
   emit('update:value', out);

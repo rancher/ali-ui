@@ -34,13 +34,13 @@ const emit = defineEmits(['add', 'remove', 'update:value']);
 const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<OrderedRow[]>([]);
 
-for ( const value of input ) {
-  rows.value.push({ value });
+for ( const val of input ) {
+  rows.value.push({ value: val });
 }
 if ( !rows.value.length && initialEmptyRow ) {
-  const value = defaultAddValue ? clone(defaultAddValue) : '';
+  const val = defaultAddValue ? clone(defaultAddValue) : '';
 
-  rows.value.push({ value });
+  rows.value.push({ value: val });
 }
 
 const isView = computed(() => {
@@ -58,10 +58,10 @@ const update = () => {
 
   for ( const row of rows.value ) {
     const trim = !valueMultiline && (typeof row.value === 'string');
-    const value = trim ? row.value.trim() : row.value;
+    const val = trim ? row.value.trim() : row.value;
 
-    if ( typeof value !== 'undefined' ) {
-      out.push(value);
+    if ( typeof val !== 'undefined' ) {
+      out.push(val);
     }
   }
   emit('update:value', out);
