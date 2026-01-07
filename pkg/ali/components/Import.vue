@@ -7,42 +7,27 @@ import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import { getAlibabaClusters } from '../util/ack';
 import { useStore } from 'vuex';
 
-const emit = defineEmits(['update:clusterName', 'update:clusterId', 'error']);
-
-const props = defineProps({
-  mode: {
-    type:    String,
-    default: _EDIT
-  },
-
+interface Props {
+  mode?: string;
   // name of cluster to be imported
   // this wont necessarily align with normanCluster.name as it would w/ provisioning
-  clusterName: {
-    type:    String,
-    default: ''
-  },
-  clusterId: {
-    type:    String,
-    default: ''
-  },
+  clusterName?: string;
+  clusterId?: string;
+  credential?: string | null;
+  region?: string;
+  rules?: any;
+}
 
-  credential: {
-    type:    String,
-    default: null
-  },
+const {
+  mode = _EDIT,
+  clusterName = '',
+  clusterId = '',
+  credential = null,
+  region = '',
+  rules = {}
+} = defineProps<Props>();
 
-  region: {
-    type:    String,
-    default: ''
-  },
-
-  rules: {
-    type:    Object,
-    default: () => {
-      return {};
-    }
-  }
-});
+const emit = defineEmits(['update:clusterName', 'update:clusterId', 'error']);
 const store = useStore();
 const loadingClusters = ref(false);
 const clusters = ref([]);
@@ -53,12 +38,12 @@ function clusterChanged(val: any) {
 };
 
 async function listAckClusters() {
-  if (!props.region || !props.credential) {
+  if (!region || !credential) {
     return;
   }
   loadingClusters.value = true;
   try {
-    const res = await getAlibabaClusters(store, props.credential, props.region );
+    const res = await getAlibabaClusters(store, credential, region );
 
     clusters.value = res?.map((c: any) => {
       return { name: c.name, id: c.cluster_id };
@@ -73,8 +58,8 @@ async function listAckClusters() {
 const debouncedlistAckClusters = debounce(listAckClusters, 200);
 debouncedlistAckClusters();
 
-watch(() => props.region, debouncedlistAckClusters);
-watch(() => props.credential, debouncedlistAckClusters);
+watch(() => region, debouncedlistAckClusters);
+watch(() => credential, debouncedlistAckClusters);
 
 </script>
 

@@ -26,6 +26,10 @@ export const INSTANCE_TYPE = 'InstanceType';
 export const WITH_STOCK = 'WithStock';
 export const WITHOUT_STOCK = 'WithoutStock';
 
+export const MAX_NODES_EDIT = 500;
+export const MAX_NODES_BASIC = 10;
+export const MAX_NODES_PRO = 5000;
+
 export const DEFAULT_DISK_VALUE = {
   category:  'cloud_essd',
   size:      40,

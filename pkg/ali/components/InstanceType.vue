@@ -29,16 +29,18 @@ interface Props {
   zones?: Set<string>;
   rules?: ((val: string[]) => string | undefined)[];
 }
+const {
+  mode = _CREATE,
+  value,
+  config,
+  disabled = false,
+  loadingInstanceTypes = false,
+  allInstanceTypes = {},
+  zones = new Set(),
+  rules = []
+} = defineProps<Props>();
 
-const emit = defineEmits(['update:value', 'error']);
-const props = withDefaults(defineProps<Props>(), {
-  mode:                 _CREATE,
-  disabled:             false,
-  loadingInstanceTypes: false,
-  allInstanceTypes:     () => ({}),
-  zones:                () => new Set(),
-  rules:                () => []
-});
+const emit = defineEmits(['update:value', 'error']);  
 const store = useStore();
 const { t } = useI18n(store);
 
@@ -50,7 +52,7 @@ const localInstanceTypes = ref<any>([]);
 
 const instanceTypesList = computed({
   get: () => { 
-    return (props.value || []).map((instanceType: string) => {
+    return (value || []).map((instanceType: string) => {
       const fromDict = typesDictionary.value[instanceType];
 
       if (!fromDict) {
@@ -83,8 +85,8 @@ const instanceTypesList = computed({
 const validationErrors = computed(() => {
   const ruleMessages = [];
 
-  for (const rule of props.rules) {
-    const message = rule(props.value);
+  for (const rule of rules) {
+    const message = rule(value);
 
     if (!!message ) {
       ruleMessages.push(message);
@@ -95,12 +97,12 @@ const validationErrors = computed(() => {
 });
 
 function toggleInstanceType(instanceType: string, add: boolean) {
-  const isSelected = props.value.includes(instanceType);
+  const isSelected = value.includes(instanceType);
   if (add && !isSelected) {
-    const newInstanceTypes = [...props.value, instanceType];
+    const newInstanceTypes = [...value, instanceType];
     emit('update:value', newInstanceTypes);
   } else if (!add && isSelected) {
-    const newInstanceTypes = props.value.filter((t) => t !== instanceType);
+    const newInstanceTypes = value.filter((t) => t !== instanceType);
     emit('update:value', newInstanceTypes)
   }
 
@@ -111,7 +113,7 @@ function formatInstanceTypesForTable() {
   const availableZones = localInstanceTypes.value?.AvailableZones?.AvailableZone || [];
 
   availableZones.forEach((zone: any) => {
-    const zoneAllowed = props.zones.size === 0 || (zone.ZoneId && props.zones.has(zone.ZoneId)) || props.disabled;
+    const zoneAllowed = zones.size === 0 || (zone.ZoneId && zones.has(zone.ZoneId)) || disabled;
 
     if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
       const availableResources = zone.AvailableResources?.AvailableResource || [];
@@ -127,8 +129,8 @@ function formatInstanceTypesForTable() {
               if (typesDictionaryNew[typeValue]) {
                 typesDictionaryNew[typeValue].zones.push(zone.ZoneId);
               } else {
-                if (props.allInstanceTypes[typeValue]) {
-                  const fromAll = props.allInstanceTypes[typeValue];
+                if (allInstanceTypes[typeValue]) {
+                  const fromAll = allInstanceTypes[typeValue];
                   const cpuMatches = !cpu.value || (cpu.value && cpu.value === fromAll.cpu);
                   const memoryMatches = !memory.value || memory.value === fromAll.memory;
 
@@ -171,7 +173,7 @@ function formatInstanceTypesForTable() {
   return { formatted, typesDictionaryNew };
 };
 async function getLocalInstanceTypes() {
-  const { alibabaCredentialSecret, regionId } = props.config;
+  const { alibabaCredentialSecret, regionId } = config;
 
   try {
     instanceTypeOptions.value = [];
@@ -189,25 +191,25 @@ function updateTable() {
   instanceTypeOptions.value = formatted;
   typesDictionary.value = typesDictionaryNew;
 }
-watch(() => props.config.alibabaCredentialSecret, (neu, old) => {
+watch(() => config.alibabaCredentialSecret, (neu, old) => {
   if (neu && old && neu !== old) {
     getLocalInstanceTypes();
   }
 });
 
-watch(() => props.config.regionId, (neu, old) => {
+watch(() => config.regionId, (neu, old) => {
   if (neu && old && neu !== old) {
     getLocalInstanceTypes();
   }
 });
 
-watch(() => props.zones, () => {
+watch(() => zones, () => {
   getLocalInstanceTypes();
 });
 
 watch(cpu, updateTable);
 watch(memory, updateTable);
-watch(() => props.allInstanceTypes, updateTable, { deep: true });
+watch(() => allInstanceTypes, updateTable, { deep: true });
 watch(localInstanceTypes, updateTable);
 
 getLocalInstanceTypes();
@@ -263,7 +265,7 @@ getLocalInstanceTypes();
     </template>
     <template #cell:selected="{ row }">
       <Checkbox
-        :value="props.value.includes(row.instanceType)"
+        :value="value.includes(row.instanceType)"
         @update:value="toggleInstanceType(row.instanceType, $event)"
       />
     </template>

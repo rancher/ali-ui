@@ -1,6 +1,6 @@
-<script>
-import { defineComponent } from 'vue';
-import { mapGetters } from 'vuex';
+<script setup lang="ts">
+import { ref, reactive, computed, watch } from 'vue';
+import { useStore } from 'vuex';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
@@ -8,212 +8,180 @@ import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
 import { getDataDisksForInstanceTypes } from '../util/ack';
-import { STATUS_AVAILABLE, DATA_DISK } from '../util/shared';
+import { STATUS_AVAILABLE, DATA_DISK, MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO } from '../util/shared';
 
-export default defineComponent({
-  name: 'ACKNodePool',
+defineOptions({ name: 'ACKNodePool' });
 
-  components: {
-    LabeledInput,
-    LabeledSelect,
-    InstanceType,
-    DiskType,
-    DiskGroup
-  },
+interface Props {
+  mode?: string;
+  pool: any;
+  config: any;
+  allImages?: any;
+  loadingImages?: boolean;
+  loadingInstanceTypes?: boolean;
+  allInstanceTypes?: any;
+  zones?: any;
+  isInactive?: boolean;
+  validationRules?: any;
+}
 
-  props: {
-    mode: {
-      type:    String,
-      default: _CREATE
-    },
+const {
+  mode = _CREATE,
+  pool,
+  config,
+  allImages = {},
+  loadingImages = false,
+  loadingInstanceTypes = false,
+  allInstanceTypes = {},
+  zones = new Set(),
+  isInactive = false,
+  validationRules = {}
+} = defineProps<Props>();
 
-    pool: {
-      type:     Object,
-      required: true
-    },
-    config: {
-      type:     Object,
-      required: true
-    },
-    allImages: {
-      type:    Object,
-      default: () => {}
-    },
-    loadingImages: {
-      type:    Boolean,
-      default: false
-    },
-    loadingInstanceTypes: {
-      type:    Boolean,
-      default: false
-    },
-    allInstanceTypes: {
-      type:    Object,
-      default: () => {}
-    },
-    zones: {
-      type:    Object,
-      default: () => new Set()
-    },
-    isInactive: {
-      type:    Boolean,
-      default: false
-    },
-    validationRules: {
-      type:    Object,
-      default: () => {
-        return {};
-      }
-    },
-  },
-  emits: ['error'],
+const emit = defineEmits(['error']);
+const store = useStore();
+const t = store.getters['i18n/t'];
 
-  data() {
-    return {
-      loadingDiskTypes:        false,
-      allDiskTypes:            [],
-    };
-  },
+const loadingDiskTypes = ref(false);
+const allDiskTypes = ref<any[]>([]);
 
-  computed: {
-    ...mapGetters({ t: 'i18n/t' }),
-    isView() {
-      return this.mode === _VIEW;
-    },
+const isView = computed(() => mode === _VIEW);
 
-    showInstanceTypes() {
-      return this.pool.instanceTypes || this.pool._isNew;
-    },
-    maxPools() {
-      const isBasic = this.config.clusterSpec === 'ack.standard';
+const showInstanceTypes = computed(() => pool.instanceTypes || pool._isNew);
 
-      return !this.pool._isNew ? 500 : ( isBasic ? 10 : 5000 );
+const maxPools = computed(() => {
+  const isBasic = config.clusterSpec === 'ack.standard';
+
+  return !pool._isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
+});
+
+const systemDisk = reactive({
+  category: computed({
+    get() {
+      return pool.systemDiskCategory;
     },
-    systemDisk: {
-      get() {
-        return { category: this.pool.systemDiskCategory, size: this.pool.systemDiskSize };
-      },
-      set(neu) {
-        this.pool.systemDiskCategory = neu.category;
-        this.pool.systemDiskSize = neu.size;
-      }
-    },
-    imageOptions() {
-      return Object.keys(this.allImages).map((image) => {
-        return { value: image, label: this.allImages[image].label || '' };
-      });
-    },
-    image: {
-      get() {
-        return this.pool.imageType;
-      },
-      set(neu) {
-        this.pool.imageId = this.allImages[neu];
-        this.pool.imageType = neu;
-      }
-    },
-    showDesiredSize() {
-      return this.pool._isNew || !(this.pool.minInstances || this.pool.maxInstances);
+    set(neu) {
+      pool.systemDiskCategory = neu;
     }
-  },
-  watch: {
-    'pool.instanceTypes': {
-      handler() {
-        this.getDiskTypes();
-      },
-      immediate: true
+  }),
+  size: computed({
+    get() {
+      return pool.systemDiskSize;
     },
-    'config.regionId': {
-      handler() {
-        this.getDiskTypes();
-      },
-      immediate: true
-    },
-    'config.alibabaCredentialSecret': {
-      handler() {
-        this.getDiskTypes();
-      },
-      immediate: true
+    set(neu) {
+      pool.systemDiskSize = neu;
     }
+  }),
+  encrypted: ref(false)
+});
+
+const imageOptions = computed(() => {
+  return Object.keys(allImages).map((image) => {
+    return { value: image, label: allImages[image].label || '' };
+  });
+});
+
+const image = computed({
+  get() {
+    return pool.imageType;
   },
+  set(neu) {
+    pool.imageId = allImages[neu];
+    pool.imageType = neu;
+  }
+});
 
-  methods: {
-    async getDiskTypes() {
-      this.loadingDiskTypes = true;
-      this.allDiskTypes = [];
-      const { alibabaCredentialSecret, regionId } = this.config;
+const showDesiredSize = computed(() => {
+  return pool._isNew || !(pool.minInstances || pool.maxInstances);
+});
 
-      try {
-        const types = {};
-        let maxCount = 0;
-        const instanceTypesLength = this.pool?.instanceTypes?.length || 0;
+const getDiskTypes = async() => {
+  loadingDiskTypes.value = true;
+  allDiskTypes.value = [];
+  const { alibabaCredentialSecret, regionId } = config;
 
-        for (let i = 0; i < instanceTypesLength; i++) {
-          const instanceType = this.pool.instanceTypes[i];
-          const res = await getDataDisksForInstanceTypes(this.$store, alibabaCredentialSecret, regionId, instanceType );
-          const availableZones = res?.AvailableZones?.AvailableZone || [];
+  try {
+    const types: any = {};
+    let maxCount = 0;
+    const instanceTypesLength = pool?.instanceTypes?.length || 0;
 
-          availableZones.forEach((zone) => {
-            const zoneAllowed = this.zones.size === 0 || (zone.ZoneId && this.zones.has(zone.ZoneId)) || !this._isNew;
+    for (let i = 0; i < instanceTypesLength; i++) {
+      const instanceType = pool.instanceTypes[i];
+      const res = await getDataDisksForInstanceTypes(store, alibabaCredentialSecret, regionId, instanceType );
+      const availableZones = res?.AvailableZones?.AvailableZone || [];
 
-            if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
-              const availableResources = zone.AvailableResources?.AvailableResource || [];
+      availableZones.forEach((zone: any) => {
+        const zoneAllowed = zones.size === 0 || (zone.ZoneId && zones.has(zone.ZoneId)) || !pool._isNew;
 
-              availableResources.forEach((resource) => {
-                if (resource.Type === DATA_DISK) {
-                  const dataDisks = resource.SupportedResources?.SupportedResource;
+        if (zoneAllowed && zone.Status === STATUS_AVAILABLE) {
+          const availableResources = zone.AvailableResources?.AvailableResource || [];
 
-                  dataDisks.forEach((disk) => {
-                    if (!types[disk.Value]) {
-                      types[disk.Value] = {
-                        min:      disk.Min,
-                        max:      disk.Max,
-                        counter:  1,
-                        lastType: instanceType
-                      };
-                    } else {
-                      const cur = types[disk.Value];
-                      const shouldIncrement = cur.lastType !== instanceType;
+          availableResources.forEach((resource: any) => {
+            if (resource.Type === DATA_DISK) {
+              const dataDisks = resource.SupportedResources?.SupportedResource;
 
-                      types[disk.Value] = {
-                        min:      Math.min(types[disk.Value].min, disk.Min),
-                        max:      Math.max(cur.max, disk.Max),
-                        counter:  !shouldIncrement ? cur.counter : cur.counter + 1,
-                        lastType: instanceType
-                      };
-                    }
-                    maxCount = Math.max(maxCount, types[disk.Value].counter);
-                  });
+              dataDisks.forEach((disk: any) => {
+                if (!types[disk.Value]) {
+                  types[disk.Value] = {
+                    min:      disk.Min,
+                    max:      disk.Max,
+                    counter:  1,
+                    lastType: instanceType
+                  };
+                } else {
+                  const cur = types[disk.Value];
+                  const shouldIncrement = cur.lastType !== instanceType;
+
+                  types[disk.Value] = {
+                    min:      Math.min(types[disk.Value].min, disk.Min),
+                    max:      Math.max(cur.max, disk.Max),
+                    counter:  !shouldIncrement ? cur.counter : cur.counter + 1,
+                    lastType: instanceType
+                  };
                 }
+                maxCount = Math.max(maxCount, types[disk.Value].counter);
               });
             }
           });
         }
-        // I will use min and max for validation later
-        const out = [];
-
-        for (const type in types) {
-          // Checking against the most seen disks instead of the length of instance types in case some types are invalid
-          if (types[type].counter === maxCount) {
-            out.push({ value: type, label: this.t( `ack.nodePool.diskCategory.options.${ type }`) });
-          }
-        }
-        this.allDiskTypes = out;
-      } catch (err) {
-        const parsedError = err.error || '';
-
-        this.$emit('error', this.t('ack.errors.diskTypes', { e: parsedError || err }));
-      }
-      this.loadingDiskTypes = false;
-    },
-    poolSizeValidator() {
-      const _isNew = this.pool._isNew;
-
-      return (val) => this.validationRules?.count?.[0](val, _isNew);
+      });
     }
-  },
+    // I will use min and max for validation later
+    const out = [];
 
-});
+    for (const type in types) {
+      // Checking against the most seen disks instead of the length of instance types in case some types are invalid
+      if (types[type].counter === maxCount) {
+        out.push({ value: type, label: t( `ack.nodePool.diskCategory.options.${ type }`) });
+      }
+    }
+    allDiskTypes.value = out;
+  } catch (err: any) {
+    const parsedError = err.error || '';
+
+    emit('error', t('ack.errors.diskTypes', { e: parsedError || err }));
+  }
+  loadingDiskTypes.value = false;
+};
+
+watch(
+  [
+    () => pool.instanceTypes,
+    () => config.regionId,
+    () => config.alibabaCredentialSecret
+  ],
+  () => {
+    getDiskTypes();
+  },
+  { immediate: true }
+);
+
+function poolSizeValidator() {
+  const _isNew = pool._isNew;
+
+  return (val: any) => validationRules?.count?.[0](val, _isNew);
+}
+
 </script>
 
 <template>
@@ -307,7 +275,9 @@ export default defineComponent({
     {{ t('ack.nodePool.systemDisk.title') }}
   </p>
   <DiskType
-    v-model:value="systemDisk"
+    v-model:category="systemDisk.category"
+    v-model:size="systemDisk.size"
+    v-model:encrypted="systemDisk.encrypted"
     :mode="mode"
     :disabled="!pool._isNew"
     :show-encrypted="false"

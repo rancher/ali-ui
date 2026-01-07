@@ -9,57 +9,42 @@ import Tag from '@shell/components/Tag.vue';
 interface OrderedRow {
   value: any;
 }
+interface Props {
+  value?: any[] | null;
+  mode?: string;
+  initialEmptyRow?: boolean;
+  title?: string;
+  valueMultiline?: boolean;
+  defaultAddValue?: string | number | Record<string, any> | any[];
+  disabled?: boolean;
+  componentTestid?: string;
+}
+const {
+  value = null,
+  mode = _EDIT,
+  initialEmptyRow = false,
+  title = '',
+  valueMultiline = false,
+  defaultAddValue = '',
+  disabled = false,
+  componentTestid = 'array-list-ordered'
+} = defineProps<Props>();
+
 const emit = defineEmits(['add', 'remove', 'update:value']);
-const props = defineProps({
-  value: {
-    type:    Array,
-    default: null,
-  },
-  mode: {
-    type:    String,
-    default: _EDIT,
-  },
-  initialEmptyRow: {
-    type:    Boolean,
-    default: false,
-  },
-  title: {
-    type:    String,
-    default: ''
-  },
-  valueMultiline: {
-    type:    Boolean,
-    default: false,
-  },
-  defaultAddValue: {
-    type:    [String, Number, Object, Array],
-    default: ''
-  },
-  disabled: {
-    type:    Boolean,
-    default: false,
-  },
-  componentTestid: {
-    type:    String,
-    default: 'array-list-ordered',
-  }
-});
-
-
-const input = (Array.isArray(props.value) ? props.value : []).slice();
+const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<OrderedRow[]>([]);
 
 for ( const value of input ) {
   rows.value.push({ value });
 }
-if ( !rows.value.length && props.initialEmptyRow ) {
-  const value = props.defaultAddValue ? clone(props.defaultAddValue) : '';
+if ( !rows.value.length && initialEmptyRow ) {
+  const value = defaultAddValue ? clone(defaultAddValue) : '';
 
   rows.value.push({ value });
 }
 
 const isView = computed(() => {
-  return props.mode === _VIEW;
+  return mode === _VIEW;
 });
 
 /**
@@ -72,7 +57,7 @@ const update = () => {
   const out = [];
 
   for ( const row of rows.value ) {
-    const trim = !props.valueMultiline && (typeof row.value === 'string');
+    const trim = !valueMultiline && (typeof row.value === 'string');
     const value = trim ? row.value.trim() : row.value;
 
     if ( typeof value !== 'undefined' ) {
@@ -99,10 +84,10 @@ watch(
 );
 
 watch(
-  () => props.value,
+  () => value,
   () => {
     lastUpdateWasFromValue.value = true;
-    rows.value = (props.value || []).map((v) => ({ value: v }));
+    rows.value = (value || []).map((v) => ({ value: v }));
   },
   { deep: true }
 );

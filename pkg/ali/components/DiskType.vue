@@ -1,53 +1,30 @@
 <script setup lang='ts'>
-import {  computed, PropType } from 'vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import Checkbox from '@components/Form/Checkbox/Checkbox.vue';
 import UnitInput from '@shell/components/form/UnitInput.vue';
 import { _CREATE } from '@shell/config/query-params';
 
 defineOptions({ name: 'ACKDiskType' });
+interface Props {
+  mode?: string;
+  disabled?: boolean;
+  showEncrypted?: boolean;
+  options?: any[];
+  loading?: boolean;
+}
+
+const {
+  mode = _CREATE,
+  disabled = false,
+  showEncrypted = true,
+  options = [],
+  loading = false
+} = defineProps<Props>();
 
 const emit = defineEmits(['update:value']);
-const props = defineProps({
-  mode: {
-    type:    String,
-    default: _CREATE
-  },
-
-  value: {
-    type:     Object as PropType<any>,
-    required: true
-  },
-  disabled: {
-    type:    Boolean,
-    default: false
-  },
-  showEncrypted: {
-    type:    Boolean,
-    default: true
-  },
-  options: {
-    type:    Array,
-    default: () => []
-  },
-  loading: {
-    type:    Boolean,
-    default: false
-  }
-});
-
-const category = computed({
-  get: () => props.value.category,
-  set: (neu: string) => emit('update:value', { ...props.value, category: neu })
-});
-const size = computed({
-  get: () => props.value.size,
-  set: (neu: string) => emit('update:value', { ...props.value, size: neu })
-});
-const encrypted = computed ({
-  get: () => props.value.encrypted,
-  set: (neu: boolean) => emit('update:value', { ...props.value, encrypted: neu })
-});
+const category = defineModel('category', { default: 'cloud_essd'})
+const size = defineModel('size', { default: 40 });
+const encrypted = defineModel('encrypted');
 </script>
 
 <template>

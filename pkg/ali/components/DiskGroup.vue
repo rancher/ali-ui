@@ -9,39 +9,28 @@ import { DEFAULT_DISK_VALUE } from '../util/shared';
 interface DiskRow {
   value: any;
 }
-const emit = defineEmits(['add', 'remove', 'update:value']);
-const props = defineProps({
-  value: {
-    type:    Array,
-    default: null,
-  },
-  mode: {
-    type:    String,
-    default: _EDIT,
-  },
-  removeAllowed: {
-    type:    Boolean,
-    default: true,
-  },
-  addDisabled: {
-    type:    Boolean,
-    default: false,
-  },
-  loading: {
-    type:    Boolean,
-    default: false
-  },
-  disabled: {
-    type:    Boolean,
-    default: false
-  },
-  options: {
-    type:    Array,
-    default: () => []
-  },
-});
+interface Props {
+  value?: any[] | null;
+  mode?: string;
+  removeAllowed?: boolean;
+  addDisabled?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
+  options?: any[];
+}
 
-const input = (Array.isArray(props.value) ? props.value : []).slice();
+const {
+  value = null,
+  mode = _EDIT,
+  removeAllowed = true,
+  addDisabled = false,
+  loading = false,
+  disabled = false,
+  options = []
+} = defineProps<Props>();
+
+const emit = defineEmits(['add', 'remove', 'update:value']);
+const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<DiskRow[]>([]);
 
 for ( const value of input ) {
@@ -54,16 +43,16 @@ if ( !rows.value.length ) {
 }
 
 const isView = computed(() => {
-  return props.mode === _VIEW;
+  return mode === _VIEW;
 });
 
 const isCreate = computed(() => {
-  return props.mode === _CREATE;
+  return mode === _CREATE;
 });
 
 /**
-     * Cleanup rows and emit input
-     */
+* Cleanup rows and emit input
+*/
 const update = () => {
   if ( isView.value ) {
     return;
@@ -97,10 +86,10 @@ watch(
 );
 
 watch(
-  () => props.value,
+  () => value,
   () => {
     lastUpdateWasFromValue.value = true;
-    rows.value = (props.value || []).map((v) => ({ value: v }));
+    rows.value = (value || []).map((v) => ({ value: v }));
   },
   { deep: true }
 );
@@ -134,7 +123,9 @@ function remove(row: DiskRow, index: number) {
       >
         <DiskType
           :key="idx"
-          v-model:value="row.value"
+          v-model:category="row.value.category"
+          v-model:size="row.value.size"
+          v-model:encrypted="row.value.encrypted"
           :mode="mode"
           :disabled="disabled"
           :options="options"
