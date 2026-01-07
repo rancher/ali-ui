@@ -146,7 +146,6 @@ const getDiskTypes = async() => {
         }
       });
     }
-    // I will use min and max for validation later
     const out = [];
 
     for (const type in types) {
