@@ -31,6 +31,10 @@ ack:
     name: 
       label: Node Pool Name
     unnamed: Unnamed Node Pool
+    scalingMode : 
+      label: Scaling Mode
+      manual: Manual
+      auto: Auto
     desiredSize:
       label: Expected Nodes
     minInstances:

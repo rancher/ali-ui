@@ -29,6 +29,9 @@ export const WITHOUT_STOCK = 'WithoutStock';
 export const MAX_NODES_EDIT = 500;
 export const MAX_NODES_BASIC = 10;
 export const MAX_NODES_PRO = 5000;
+export const DEFAULT_NODES = 1;
+export const DEFAULT_MIN_NODES_SCALING = 1;
+export const DEFAULT_MAX_NODES_SCALING = 10;
 
 export const DEFAULT_DISK_VALUE = {
   category:  'cloud_essd',
