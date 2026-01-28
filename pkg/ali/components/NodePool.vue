@@ -4,11 +4,12 @@ import { useStore } from 'vuex';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
+import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
 import { getDataDisksForInstanceTypes } from '../util/ack';
-import { STATUS_AVAILABLE, DATA_DISK, MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO } from '../util/shared';
+import { STATUS_AVAILABLE, DATA_DISK, MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO, DEFAULT_NODES, DEFAULT_MIN_NODES_SCALING, DEFAULT_MAX_NODES_SCALING } from '../util/shared';
 
 defineOptions({ name: 'ACKNodePool' });
 
@@ -91,9 +92,7 @@ const image = computed({
   }
 });
 
-const showDesiredSize = computed(() => {
-  return pool._isNew || !(pool.minInstances || pool.maxInstances);
-});
+const scalingModeOptions = ref([{label: t('ack.nodePool.scalingMode.manual'), value: false},{label: t('ack.nodePool.scalingMode.auto'), value: true}]);
 
 const getDiskTypes = async() => {
   loadingDiskTypes.value = true;
@@ -175,10 +174,35 @@ watch(
   { immediate: true }
 );
 
+function handleEnablingAutoscaling(val: boolean) {
+  if(!val){
+    pool.minInstances = null;
+    pool.maxInstances = null;
+    pool.desiredSize = DEFAULT_NODES;
+  } else {
+    pool.minInstances = DEFAULT_MIN_NODES_SCALING;
+    pool.maxInstances = DEFAULT_MAX_NODES_SCALING;
+    pool.desiredSize = null;
+  }
+  
+}
+
 function poolSizeValidator() {
   const _isNew = pool._isNew;
 
   return (val: any) => validationRules?.count?.[0](val, _isNew);
+}
+
+function minInstancesValidator() {
+  const maxInstances = pool.maxInstances;
+
+  return (val: any) => validationRules?.minInstances?.[0](val, maxInstances);
+}
+
+function maxInstancesValidator() {
+  const minInstances = pool.minInstances;
+
+  return (val: any) => validationRules?.maxInstances?.[0](val, minInstances);
 }
 
 </script>
@@ -187,8 +211,7 @@ function poolSizeValidator() {
   <div
     class="pool"
   >
-    <div class="row mb-10">
-      <div class="col span-3">
+      <div class="col span-3 mb-30">
         <LabeledInput
           v-model:value="pool.name"
           :mode="mode"
@@ -198,50 +221,67 @@ function poolSizeValidator() {
           :rules="validationRules.name"
         />
       </div>
-      <div
-        v-if="showDesiredSize"
-        class="col span-3"
-      >
-        <LabeledInput
-          v-model:value="pool.desiredSize"
-          :disabled="isView || isInactive"
-          :mode="mode"
-          label-key="ack.nodePool.desiredSize.label"
-          :min="1"
-          :max="maxPools"
-          data-testid="ack-pool-count-input"
-          required
-          :rules="[poolSizeValidator()]"
-        />
-      </div>
-      <div
-        v-else
-        class="row span-12"
-      >
-        <div class="col span-2">
-          <LabeledInput
-            v-model:value.number="pool.minInstances"
-            :disabled="true"
-            type="number"
+      <div class="mb-30">
+        <h4 class="mb-10">{{ t("ack.nodePool.scalingMode.label") }}</h4>
+      <div class="col span-3 mb-10">
+        <RadioGroup
+            v-model:value="pool.enableAutoScaling"
+            name="node-autoscaling"
             :mode="mode"
-            label-key="ack.nodePool.minInstances.label"
-            data-testid="ack-pool-min-instances-input"
+            :options="scalingModeOptions"
+            :row="true"
+            :disabled="isView || isInactive"
+            @update:value="handleEnablingAutoscaling"
+          />
+      </div>
+      
+        <div
+          v-if="!pool.enableAutoScaling"
+          class="col span-3"
+        >
+          <LabeledInput
+            v-model:value="pool.desiredSize"
+            :disabled="isView || isInactive"
+            :mode="mode"
+            label-key="ack.nodePool.desiredSize.label"
+            :min="1"
+            :max="maxPools"
+            data-testid="ack-pool-count-input"
+            required
+            :rules="[poolSizeValidator()]"
           />
         </div>
-        <div class="col span-2">
-          <LabeledInput
-            v-model:value.number="pool.maxInstances"
-            :disabled="true"
-            type="number"
-            :mode="mode"
-            label-key="ack.nodePool.maxInstances.label"
-            data-testid="ack-pool-max-instances-input"
-          />
+        <div
+          v-else
+          class="row span-12"
+        >
+          <div class="col span-4">
+            <LabeledInput
+              v-model:value.number="pool.minInstances"
+              type="number"
+              :mode="mode"
+              label-key="ack.nodePool.minInstances.label"
+              data-testid="ack-pool-min-instances-input"
+              :disabled="isView || isInactive"
+              :rules="[minInstancesValidator()]"
+              required
+            />
+          </div>
+          <div class="col span-4">
+            <LabeledInput
+              v-model:value.number="pool.maxInstances"
+              type="number"
+              :mode="mode"
+              label-key="ack.nodePool.maxInstances.label"
+              data-testid="ack-pool-max-instances-input"
+              :disabled="isView || isInactive"
+              :rules="[maxInstancesValidator()]"
+              required
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row mb-20">
-      <div class="col span-6">
+      <div class="col span-6 mb-30">
         <LabeledSelect
           v-model:value="image"
           :mode="mode"
@@ -253,7 +293,6 @@ function poolSizeValidator() {
           :disabled="!pool._isNew"
         />
       </div>
-    </div>
     <div
       v-if="showInstanceTypes"
       class="col mb-30"
@@ -282,6 +321,7 @@ function poolSizeValidator() {
     :show-encrypted="false"
     :options="allDiskTypes"
     :loading="loadingDiskTypes"
+    class="mb-30"
   />
   <p class="mb-10">
     {{ t('ack.nodePool.dataDisks.title') }}

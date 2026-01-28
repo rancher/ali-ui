@@ -1,6 +1,6 @@
 import ipaddr from "ipaddr.js";
 import { get, set } from '@shell/utils/object';
-
+import { MAX_NODES_BASIC, MAX_NODES_PRO, MAX_NODES_EDIT } from "./shared";
 // Converts ip into 32 long integer by breaking it down into octets,
 // shifting existing value by 8 bits and adding new octet converted to base 10
 // In the end, we need to do a zero fill right shift to ensure final value is treated 
@@ -155,18 +155,24 @@ export const nodePoolCount = (ctx:any) => {
     const min = 0;
 
     if (desiredSize || desiredSize === 0) {
-      const max = !_isNew ? 500 : ( isBasic ? 10 : 5000 );
+       const max = !_isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
       return desiredSize >= min && desiredSize <= max ? undefined : errMsg;
     } else {
       let allValid = true;
 
       ctx.nodePools.forEach((pool: any) => {
+        if (pool.enableAutoScaling) {
+          pool._validation['_validCount'] = true;
+          return;
+        }
         const { desiredSize, _isNew } = pool;
-        if(!desiredSize || !Number.isInteger(+desiredSize) || `${ desiredSize }`.match(/\.+/g)){
-          return ctx.t('validation.nodeCountNumeric');
+        if((!desiredSize && desiredSize !== 0) || !Number.isInteger(+desiredSize) || `${ desiredSize }`.match(/\.+/g)){
+          pool._validation['_validCount'] = false;
+          allValid = false;
+          return;
         }
         
-        const max = !_isNew ? 500 : ( isBasic ? 10 : 5000 );
+         const max = !_isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
 
         if (desiredSize < min || desiredSize > max) {
           pool._validation['_validCount'] = false;
@@ -201,4 +207,85 @@ export const instanceTypeCount = (ctx:any) => {
       return allValid ? undefined : ctx.t('validation.instanceTypeCount');
     }
   }
+};
+
+export const minInstances = (ctx:any) => {
+  return (minInstances?: number, maxInstances = 0) => {
+    if(!!minInstances && (!Number.isInteger(+minInstances) || `${ minInstances }`.match(/\.+/g))){
+      return ctx.t('validation.instancesNumeric');
+    }
+
+    let errMsg = ctx.t('validation.minInstances');
+    const min = 0;
+
+    if (minInstances || minInstances === 0) {
+      if(!maxInstances){
+        return minInstances >= min ? undefined : errMsg;
+      }
+      return minInstances >= min && minInstances <= maxInstances ? undefined : errMsg;
+    } else {
+      let allValid = true;
+
+      ctx.nodePools.forEach((pool: any) => {
+        if (!pool.enableAutoScaling) {
+          pool._validation['_validMinInstances'] = true;
+          return;
+        }
+        const { minInstances, maxInstances } = pool;
+        if((!minInstances && minInstances !== 0) || !Number.isInteger(+minInstances) || `${ minInstances }`.match(/\.+/g)){
+          pool._validation['_validMinInstances'] = false;
+          allValid = false;
+          return;
+        }
+
+        if (minInstances < min || !((maxInstances || maxInstances === 0) && minInstances <= maxInstances)) {
+          pool._validation['_validMinInstances'] = false;
+          allValid = false;
+        } else {
+          pool._validation['_validMinInstances'] = true;
+        }
+      });
+
+      return allValid ? undefined : errMsg;
+    }
+  };
+};
+export const maxInstances = (ctx:any) => {
+  return (maxInstances?: number, minInstances = 0) => {
+    if(!!maxInstances && (!Number.isInteger(+maxInstances) || `${ maxInstances }`.match(/\.+/g))){
+      return ctx.t('validation.instancesNumeric');
+    }
+
+    let errMsg = ctx.t('validation.maxInstances');
+    let min = !minInstances ? 0 : minInstances;
+
+    if (maxInstances || maxInstances === 0) {
+      return maxInstances >= min ? undefined : errMsg;
+    } else {
+      let allValid = true;
+
+      ctx.nodePools.forEach((pool: any) => {
+        if (!pool.enableAutoScaling) {
+          pool._validation['_validMaxInstances'] = true;
+          return;
+        }
+        const { minInstances, maxInstances } = pool;
+        let min = !minInstances ? 0 : minInstances;
+        if((!maxInstances && maxInstances !== 0) || !Number.isInteger(+maxInstances) || `${ maxInstances }`.match(/\.+/g)){
+          pool._validation['_validMaxInstances'] = false;
+          allValid = false;
+          return;
+        }
+
+        if (maxInstances < min) {
+          pool._validation['_validMaxInstances'] = false;
+          allValid = false;
+        } else {
+          pool._validation['_validMaxInstances'] = true;
+        }
+      });
+
+      return allValid ? undefined : errMsg;
+    }
+  };
 };
