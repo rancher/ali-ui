@@ -219,7 +219,7 @@ export const minInstances = (ctx:any) => {
     const min = 0;
 
     if (minInstances || minInstances === 0) {
-      if(!maxInstances){
+      if(!maxInstances && maxInstances !== 0){
         return minInstances >= min ? undefined : errMsg;
       }
       return minInstances >= min && minInstances <= maxInstances ? undefined : errMsg;
@@ -257,7 +257,13 @@ export const maxInstances = (ctx:any) => {
     }
 
     let errMsg = ctx.t('validation.maxInstances');
-    let min = !minInstances ? 0 : minInstances;
+    let min = !minInstances || minInstances < 0 ? 0 : minInstances;
+    if(!minInstances || minInstances < 0){
+      min = 0;
+      errMsg = ctx.t('validation.maxInstancesZero');
+    } else {
+      min = minInstances;
+    }
 
     if (maxInstances || maxInstances === 0) {
       return maxInstances >= min ? undefined : errMsg;

@@ -4,8 +4,10 @@ import debounce from 'lodash/debounce';
 import { _EDIT, _VIEW, _CREATE } from '@shell/config/query-params';
 import { removeAt } from '@shell/utils/array';
 import { clone } from '@shell/utils/object';
+import { useStore } from 'vuex';
 import DiskType from './DiskType.vue';
 import { DEFAULT_DISK_VALUE } from '../util/shared';
+
 interface DiskRow {
   value: any;
 }
@@ -32,6 +34,8 @@ const {
 const emit = defineEmits(['add', 'remove', 'update:value']);
 const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<DiskRow[]>([]);
+  const store = useStore();
+  const t = store.getters['i18n/t'];
 
 for ( const val of input ) {
   rows.value.push({ value: val });

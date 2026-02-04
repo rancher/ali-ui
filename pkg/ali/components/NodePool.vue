@@ -4,13 +4,12 @@ import { useStore } from 'vuex';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
-import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
 import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
 import { getDataDisksForInstanceTypes } from '../util/ack';
-import { STATUS_AVAILABLE, DATA_DISK, MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO, DEFAULT_NODES, DEFAULT_MIN_NODES_SCALING, DEFAULT_MAX_NODES_SCALING } from '../util/shared';
-
+import { STATUS_AVAILABLE, DATA_DISK } from '../util/shared';
+import PoolSize from './PoolSize.vue';
 defineOptions({ name: 'ACKNodePool' });
 
 interface Props {
@@ -45,16 +44,7 @@ const t = store.getters['i18n/t'];
 
 const loadingDiskTypes = ref(false);
 const allDiskTypes = ref<any[]>([]);
-
-const isView = computed(() => mode === _VIEW);
-
 const showInstanceTypes = computed(() => pool.instanceTypes || pool._isNew);
-
-const maxPools = computed(() => {
-  const isBasic = config.clusterSpec === 'ack.standard';
-
-  return !pool._isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
-});
 
 const systemDisk = reactive({
   category: computed({
@@ -91,8 +81,6 @@ const image = computed({
     pool.imageType = neu;
   }
 });
-
-const scalingModeOptions = ref([{label: t('ack.nodePool.scalingMode.manual'), value: false},{label: t('ack.nodePool.scalingMode.auto'), value: true}]);
 
 const getDiskTypes = async() => {
   loadingDiskTypes.value = true;
@@ -174,37 +162,6 @@ watch(
   { immediate: true }
 );
 
-function handleEnablingAutoscaling(val: boolean) {
-  if(!val){
-    pool.minInstances = null;
-    pool.maxInstances = null;
-    pool.desiredSize = DEFAULT_NODES;
-  } else {
-    pool.minInstances = DEFAULT_MIN_NODES_SCALING;
-    pool.maxInstances = DEFAULT_MAX_NODES_SCALING;
-    pool.desiredSize = null;
-  }
-  
-}
-
-function poolSizeValidator() {
-  const _isNew = pool._isNew;
-
-  return (val: any) => validationRules?.count?.[0](val, _isNew);
-}
-
-function minInstancesValidator() {
-  const maxInstances = pool.maxInstances;
-
-  return (val: any) => validationRules?.minInstances?.[0](val, maxInstances);
-}
-
-function maxInstancesValidator() {
-  const minInstances = pool.minInstances;
-
-  return (val: any) => validationRules?.maxInstances?.[0](val, minInstances);
-}
-
 </script>
 
 <template>
@@ -221,66 +178,13 @@ function maxInstancesValidator() {
           :rules="validationRules.name"
         />
       </div>
-      <div class="mb-30">
-        <h4 class="mb-10">{{ t("ack.nodePool.scalingMode.label") }}</h4>
-      <div class="col span-3 mb-10">
-        <RadioGroup
-            v-model:value="pool.enableAutoScaling"
-            name="node-autoscaling"
-            :mode="mode"
-            :options="scalingModeOptions"
-            :row="true"
-            :disabled="isView || isInactive"
-            @update:value="handleEnablingAutoscaling"
-          />
-      </div>
-      
-        <div
-          v-if="!pool.enableAutoScaling"
-          class="col span-3"
-        >
-          <LabeledInput
-            v-model:value="pool.desiredSize"
-            :disabled="isView || isInactive"
-            :mode="mode"
-            label-key="ack.nodePool.desiredSize.label"
-            :min="1"
-            :max="maxPools"
-            data-testid="ack-pool-count-input"
-            required
-            :rules="[poolSizeValidator()]"
-          />
-        </div>
-        <div
-          v-else
-          class="row span-12"
-        >
-          <div class="col span-4">
-            <LabeledInput
-              v-model:value.number="pool.minInstances"
-              type="number"
-              :mode="mode"
-              label-key="ack.nodePool.minInstances.label"
-              data-testid="ack-pool-min-instances-input"
-              :disabled="isView || isInactive"
-              :rules="[minInstancesValidator()]"
-              required
-            />
-          </div>
-          <div class="col span-4">
-            <LabeledInput
-              v-model:value.number="pool.maxInstances"
-              type="number"
-              :mode="mode"
-              label-key="ack.nodePool.maxInstances.label"
-              data-testid="ack-pool-max-instances-input"
-              :disabled="isView || isInactive"
-              :rules="[maxInstancesValidator()]"
-              required
-            />
-          </div>
-        </div>
-      </div>
+      <PoolSize
+          :value="pool"
+          :mode="mode"
+          :config="config"
+          :is-inactive="isInactive"
+          :validation-rules="validationRules"
+      />
       <div class="col span-6 mb-30">
         <LabeledSelect
           v-model:value="image"
