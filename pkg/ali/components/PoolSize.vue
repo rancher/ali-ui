@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO, DEFAULT_NODES, DEFAULT_MIN_NODES_SCALING, DEFAULT_MAX_NODES_SCALING } from '../util/shared';
+import {
+  MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO, DEFAULT_NODES, DEFAULT_MIN_NODES_SCALING, DEFAULT_MAX_NODES_SCALING
+} from '../util/shared';
 import { _CREATE, _VIEW } from '@shell/config/query-params';
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
@@ -14,61 +16,61 @@ import RadioGroup from '@components/Form/Radio/RadioGroup.vue';
     validationRules?: any;
   }
 
-  const {
-    mode = _CREATE,
-    value,
-    config,
-    isInactive = false,
-    validationRules = {}
-  } = defineProps<Props>();
+const {
+  mode = _CREATE,
+  value,
+  config,
+  isInactive = false,
+  validationRules = {}
+} = defineProps<Props>();
 
-  const store = useStore();
-  const t = store.getters['i18n/t'];
+const store = useStore();
+const t = store.getters['i18n/t'];
 
-  const isView = computed(() => mode === _VIEW);
-  const maxPools = computed(() => {
+const isView = computed(() => mode === _VIEW);
+const maxPools = computed(() => {
   const isBasic = config.clusterSpec === 'ack.standard';
 
   return !value._isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
-  });
-  const scalingModeOptions = ref([{label: t('ack.nodePool.scalingMode.manual'), value: false},{label: t('ack.nodePool.scalingMode.auto'), value: true}]);
+});
+const scalingModeOptions = ref([{ label: t('ack.nodePool.scalingMode.manual'), value: false }, { label: t('ack.nodePool.scalingMode.auto'), value: true }]);
 
+function poolSizeValidator() {
+  const _isNew = value._isNew;
 
-  function poolSizeValidator() {
-      const _isNew = value._isNew;
+  return (val: any) => validationRules?.count?.[0](val, _isNew);
+}
 
-      return (val: any) => validationRules?.count?.[0](val, _isNew);
+function minInstancesValidator() {
+  const maxInstances = value.maxInstances;
+
+  return (val: any) => validationRules?.minInstances?.[0](val, maxInstances);
+}
+
+function maxInstancesValidator() {
+  const minInstances = value.minInstances;
+
+  return (val: any) => validationRules?.maxInstances?.[0](val, minInstances);
+}
+
+function handleEnablingAutoscaling(val: boolean) {
+  if (!val) {
+    value.minInstances = null;
+    value.maxInstances = null;
+    value.desiredSize = DEFAULT_NODES;
+  } else {
+    value.minInstances = DEFAULT_MIN_NODES_SCALING;
+    value.maxInstances = DEFAULT_MAX_NODES_SCALING;
+    value.desiredSize = null;
   }
-
-  function minInstancesValidator() {
-    const maxInstances = value.maxInstances;
-
-    return (val: any) => validationRules?.minInstances?.[0](val, maxInstances);
-  }
-
-  function maxInstancesValidator() {
-    const minInstances = value.minInstances;
-
-    return (val: any) => validationRules?.maxInstances?.[0](val, minInstances);
-  }
-
-  function handleEnablingAutoscaling(val: boolean) {
-    if(!val){
-      value.minInstances = null;
-      value.maxInstances = null;
-      value.desiredSize = DEFAULT_NODES;
-    } else {
-      value.minInstances = DEFAULT_MIN_NODES_SCALING;
-      value.maxInstances = DEFAULT_MAX_NODES_SCALING;
-      value.desiredSize = null;
-    }
-    
-  }
+}
 </script>
 
 <template>
   <div class="mb-30">
-    <h4 class="mb-10">{{ t("ack.nodePool.scalingMode.label") }}</h4>
+    <h4 class="mb-10">
+      {{ t("ack.nodePool.scalingMode.label") }}
+    </h4>
     <div class="col span-3 mb-10">
       <RadioGroup
         v-model:value="value.enableAutoScaling"

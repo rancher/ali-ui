@@ -12,7 +12,6 @@ interface Props {
   // name of cluster to be imported
   // this wont necessarily align with normanCluster.name as it would w/ provisioning
   clusterName?: string;
-  clusterId?: string;
   credential?: string | null;
   region?: string;
   rules?: any;
@@ -21,7 +20,6 @@ interface Props {
 const {
   mode = _EDIT,
   clusterName = '',
-  clusterId = '',
   credential = null,
   region = '',
   rules = {}
@@ -35,7 +33,7 @@ const clusters = ref([]);
 function clusterChanged(val: any) {
   emit('update:clusterName', val?.name || '');
   emit('update:clusterId', val?.id || '');
-};
+}
 
 async function listAckClusters() {
   if (!region || !credential) {
@@ -53,9 +51,10 @@ async function listAckClusters() {
   }
 
   loadingClusters.value = false;
-};
+}
 
 const debouncedlistAckClusters = debounce(listAckClusters, 200);
+
 debouncedlistAckClusters();
 
 watch(() => region, debouncedlistAckClusters);

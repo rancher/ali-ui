@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
 import { useStore } from 'vuex';
-import { _CREATE, _VIEW } from '@shell/config/query-params';
+import { _CREATE } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import InstanceType from './InstanceType.vue';
@@ -168,35 +168,35 @@ watch(
   <div
     class="pool"
   >
-      <div class="col span-3 mb-30">
-        <LabeledInput
-          v-model:value="pool.name"
-          :mode="mode"
-          label-key="ack.nodePool.name.label"
-          required
-          :disabled="!pool._isNew"
-          :rules="validationRules.name"
-        />
-      </div>
-      <PoolSize
-          :value="pool"
-          :mode="mode"
-          :config="config"
-          :is-inactive="isInactive"
-          :validation-rules="validationRules"
+    <div class="col span-3 mb-30">
+      <LabeledInput
+        v-model:value="pool.name"
+        :mode="mode"
+        label-key="ack.nodePool.name.label"
+        required
+        :disabled="!pool._isNew"
+        :rules="validationRules.name"
       />
-      <div class="col span-6 mb-30">
-        <LabeledSelect
-          v-model:value="image"
-          :mode="mode"
-          :loading="loadingImages"
-          :options="imageOptions"
-          option-key="value"
-          label-key="ack.nodePool.imageId.label"
-          required
-          :disabled="!pool._isNew"
-        />
-      </div>
+    </div>
+    <PoolSize
+      :value="pool"
+      :mode="mode"
+      :config="config"
+      :is-inactive="isInactive"
+      :validation-rules="validationRules"
+    />
+    <div class="col span-6 mb-30">
+      <LabeledSelect
+        v-model:value="image"
+        :mode="mode"
+        :loading="loadingImages"
+        :options="imageOptions"
+        option-key="value"
+        label-key="ack.nodePool.imageId.label"
+        required
+        :disabled="!pool._isNew"
+      />
+    </div>
     <div
       v-if="showInstanceTypes"
       class="col mb-30"

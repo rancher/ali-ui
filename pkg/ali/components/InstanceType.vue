@@ -9,7 +9,9 @@ import ArrayListOrdered from './ArrayListOrdered.vue';
 import { _CREATE } from '@shell/config/query-params';
 import { getAlibabaInstanceTypes } from '../util/ack';
 import SortableTable from '@shell/components/SortableTable/index.vue';
-import { STATUS_AVAILABLE, INSTANCE_TYPE, WITH_STOCK, WITHOUT_STOCK, INSTANCE_TYPE_COLUMNS } from '../util/shared';
+import {
+  STATUS_AVAILABLE, INSTANCE_TYPE, WITH_STOCK, WITHOUT_STOCK, INSTANCE_TYPE_COLUMNS
+} from '../util/shared';
 defineOptions({ name: 'InstanceType' });
 interface InstanceTypeRow {
   instanceFamily: string;
@@ -40,7 +42,7 @@ const {
   rules = []
 } = defineProps<Props>();
 
-const emit = defineEmits(['update:value', 'error']);  
+const emit = defineEmits(['update:value', 'error']);
 const store = useStore();
 const { t } = useI18n(store);
 
@@ -51,7 +53,7 @@ const typesDictionary = ref<Record<string, InstanceTypeRow>>({});
 const localInstanceTypes = ref<any>([]);
 
 const instanceTypesList = computed({
-  get: () => { 
+  get: () => {
     return (value || []).map((instanceType: string) => {
       const fromDict = typesDictionary.value[instanceType];
 
@@ -78,7 +80,8 @@ const instanceTypesList = computed({
     const newInstanceTypes = neu.map((instanceType: { label: string }) => {
       return instanceType.label.split(' - ')[0].trim();
     });
-    emit('update:value', newInstanceTypes)
+
+    emit('update:value', newInstanceTypes);
   }
 });
 
@@ -98,15 +101,18 @@ const validationErrors = computed(() => {
 
 function toggleInstanceType(instanceType: string, add: boolean) {
   const isSelected = value.includes(instanceType);
+
   if (add && !isSelected) {
     const newInstanceTypes = [...value, instanceType];
+
     emit('update:value', newInstanceTypes);
   } else if (!add && isSelected) {
     const newInstanceTypes = value.filter((t) => t !== instanceType);
-    emit('update:value', newInstanceTypes)
-  }
 
-};
+    emit('update:value', newInstanceTypes);
+  }
+}
+
 function formatInstanceTypesForTable() {
   const typesDictionaryNew: Record<string, InstanceTypeRow> = {};
 
@@ -145,7 +151,7 @@ function formatInstanceTypesForTable() {
                   }
 
                   // If we are filtering by CPU or memory and we do not know them for the instance type, don't add them
-                } else if (!memory && !cpu) {
+                } else if (!memory.value && !cpu.value) {
                   const typeSplit = typeValue.split('.');
                   const family = `${ typeSplit[0] }.${ typeSplit[1] }`;
 
@@ -171,7 +177,8 @@ function formatInstanceTypesForTable() {
   });
 
   return { formatted, typesDictionaryNew };
-};
+}
+
 async function getLocalInstanceTypes() {
   const { alibabaCredentialSecret, regionId } = config;
 
@@ -183,7 +190,7 @@ async function getLocalInstanceTypes() {
 
     emit('error', t('ack.errors.instanceTypes', { e: parsedError || err }));
   }
-};
+}
 
 function updateTable() {
   const { formatted, typesDictionaryNew } = formatInstanceTypesForTable();

@@ -185,8 +185,8 @@ export default defineComponent({
           pool['_id'] = pool.nodePoolId || randomStr();
           pool['_isNew'] = this.isNew;
           pool['_validation'] = {};
-          if(!Object.hasOwn(pool, 'enableAutoScaling')){
-            if(pool.minInstances || pool.maxInstances){
+          if (!Object.hasOwn(pool, 'enableAutoScaling')) {
+            if (pool.minInstances || pool.maxInstances) {
               pool.enableAutoScaling = true;
             } else {
               pool.enableAutoScaling = false;
@@ -624,13 +624,13 @@ export default defineComponent({
       >
         <Import
           v-model:cluster-name="config.clusterName"
-          v-model:cluster-id="config.clusterId"
           :region="config.regionId"
           :credential="config.alibabaCredentialSecret"
           :rules="{clusterName: fvGetAndReportPathRules('clusterName')}"
           :mode="mode"
           data-testid="cruack-import"
           @error="e=>errors.push(e)"
+          @update:cluster-id="(val)=>config.clusterId=val"
         />
       </Accordion>
       <div v-else>

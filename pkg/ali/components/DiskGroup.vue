@@ -34,8 +34,8 @@ const {
 const emit = defineEmits(['add', 'remove', 'update:value']);
 const input = (Array.isArray(value) ? value : []).slice();
 const rows = ref<DiskRow[]>([]);
-  const store = useStore();
-  const t = store.getters['i18n/t'];
+const store = useStore();
+const t = store.getters['i18n/t'];
 
 for ( const val of input ) {
   rows.value.push({ value: val });
