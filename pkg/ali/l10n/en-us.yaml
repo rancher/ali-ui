@@ -31,6 +31,10 @@ ack:
     name: 
       label: Node Pool Name
     unnamed: Unnamed Node Pool
+    scalingMode: 
+      label: Scaling Mode
+      manual: Manual
+      auto: Auto
     desiredSize:
       label: Expected Nodes
     minInstances:
@@ -161,6 +165,10 @@ validation:
   poolName: The name must be 1 to 63 characters in length, and can contain letters, digits, underscores (_), and hyphens (-). It must start with a letter or digit
   poolNamesUnique: Node pool names must be unique
   nodeCountNumeric: Node count is required and must be a number
+  instancesNumeric: Number of instances is required and must be a number
+  minInstances: Min Instances must be at least 0 and at most Max Instances
+  maxInstances: Max Instances must be at least Min Instances
+  maxInstancesZero: Max Instances must be at least 0
   nodeCountPro: The current account is allowed a maximum of 5000 nodes per Pro cluster. Up to 500 nodes may be added per scaling activity
   nodeCountBasic: The current account is allowed a maximum of 10 nodes per Basic cluster. Up to 500 nodes may be added per scaling activity
   instanceTypeCount: You must select at least 1 and up to 20 instance types.

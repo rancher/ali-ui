@@ -95,7 +95,7 @@ watch(
 /**
  * Remove item and emits removed row and its own index value
  */
- function remove(row: OrderedRow, index: number) {
+function remove(row: OrderedRow, index: number) {
   emit('remove', { row, index });
   removeAt(rows.value, index);
   queueUpdate();

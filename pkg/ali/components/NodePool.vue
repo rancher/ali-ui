@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue';
 import { useStore } from 'vuex';
-import { _CREATE, _VIEW } from '@shell/config/query-params';
+import { _CREATE } from '@shell/config/query-params';
 import LabeledInput from '@components/Form/LabeledInput/LabeledInput.vue';
 import LabeledSelect from '@shell/components/form/LabeledSelect.vue';
 import InstanceType from './InstanceType.vue';
 import DiskType from './DiskType.vue';
 import DiskGroup from './DiskGroup.vue';
 import { getDataDisksForInstanceTypes } from '../util/ack';
-import { STATUS_AVAILABLE, DATA_DISK, MAX_NODES_BASIC, MAX_NODES_EDIT, MAX_NODES_PRO } from '../util/shared';
-
+import { STATUS_AVAILABLE, DATA_DISK } from '../util/shared';
+import PoolSize from './PoolSize.vue';
 defineOptions({ name: 'ACKNodePool' });
 
 interface Props {
@@ -44,16 +44,7 @@ const t = store.getters['i18n/t'];
 
 const loadingDiskTypes = ref(false);
 const allDiskTypes = ref<any[]>([]);
-
-const isView = computed(() => mode === _VIEW);
-
 const showInstanceTypes = computed(() => pool.instanceTypes || pool._isNew);
-
-const maxPools = computed(() => {
-  const isBasic = config.clusterSpec === 'ack.standard';
-
-  return !pool._isNew ? MAX_NODES_EDIT : ( isBasic ? MAX_NODES_BASIC : MAX_NODES_PRO );
-});
 
 const systemDisk = reactive({
   category: computed({
@@ -89,10 +80,6 @@ const image = computed({
     pool.imageId = allImages[neu];
     pool.imageType = neu;
   }
-});
-
-const showDesiredSize = computed(() => {
-  return pool._isNew || !(pool.minInstances || pool.maxInstances);
 });
 
 const getDiskTypes = async() => {
@@ -175,84 +162,40 @@ watch(
   { immediate: true }
 );
 
-function poolSizeValidator() {
-  const _isNew = pool._isNew;
-
-  return (val: any) => validationRules?.count?.[0](val, _isNew);
-}
-
 </script>
 
 <template>
   <div
     class="pool"
   >
-    <div class="row mb-10">
-      <div class="col span-3">
-        <LabeledInput
-          v-model:value="pool.name"
-          :mode="mode"
-          label-key="ack.nodePool.name.label"
-          required
-          :disabled="!pool._isNew"
-          :rules="validationRules.name"
-        />
-      </div>
-      <div
-        v-if="showDesiredSize"
-        class="col span-3"
-      >
-        <LabeledInput
-          v-model:value="pool.desiredSize"
-          :disabled="isView || isInactive"
-          :mode="mode"
-          label-key="ack.nodePool.desiredSize.label"
-          :min="1"
-          :max="maxPools"
-          data-testid="ack-pool-count-input"
-          required
-          :rules="[poolSizeValidator()]"
-        />
-      </div>
-      <div
-        v-else
-        class="row span-12"
-      >
-        <div class="col span-2">
-          <LabeledInput
-            v-model:value.number="pool.minInstances"
-            :disabled="true"
-            type="number"
-            :mode="mode"
-            label-key="ack.nodePool.minInstances.label"
-            data-testid="ack-pool-min-instances-input"
-          />
-        </div>
-        <div class="col span-2">
-          <LabeledInput
-            v-model:value.number="pool.maxInstances"
-            :disabled="true"
-            type="number"
-            :mode="mode"
-            label-key="ack.nodePool.maxInstances.label"
-            data-testid="ack-pool-max-instances-input"
-          />
-        </div>
-      </div>
+    <div class="col span-3 mb-30">
+      <LabeledInput
+        v-model:value="pool.name"
+        :mode="mode"
+        label-key="ack.nodePool.name.label"
+        required
+        :disabled="!pool._isNew"
+        :rules="validationRules.name"
+      />
     </div>
-    <div class="row mb-20">
-      <div class="col span-6">
-        <LabeledSelect
-          v-model:value="image"
-          :mode="mode"
-          :loading="loadingImages"
-          :options="imageOptions"
-          option-key="value"
-          label-key="ack.nodePool.imageId.label"
-          required
-          :disabled="!pool._isNew"
-        />
-      </div>
+    <PoolSize
+      :value="pool"
+      :mode="mode"
+      :config="config"
+      :is-inactive="isInactive"
+      :validation-rules="validationRules"
+    />
+    <div class="col span-6 mb-30">
+      <LabeledSelect
+        v-model:value="image"
+        :mode="mode"
+        :loading="loadingImages"
+        :options="imageOptions"
+        option-key="value"
+        label-key="ack.nodePool.imageId.label"
+        required
+        :disabled="!pool._isNew"
+      />
     </div>
     <div
       v-if="showInstanceTypes"
@@ -282,6 +225,7 @@ function poolSizeValidator() {
     :show-encrypted="false"
     :options="allDiskTypes"
     :loading="loadingDiskTypes"
+    class="mb-30"
   />
   <p class="mb-10">
     {{ t('ack.nodePool.dataDisks.title') }}

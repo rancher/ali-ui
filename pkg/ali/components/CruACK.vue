@@ -35,7 +35,9 @@ import {
   nodePoolNames,
   nodePoolNamesUnique,
   nodePoolCount,
-  instanceTypeCount
+  instanceTypeCount,
+  minInstances,
+  maxInstances
 } from '../util/validation';
 import { SETTING } from '@shell/config/settings';
 import { syncUpstreamConfig } from '@shell/utils/kontainer';
@@ -130,6 +132,14 @@ export default defineComponent({
         path:  'instanceTypeCount',
         rules: ['instanceTypeCount']
       },
+      {
+        path:  'minInstances',
+        rules: ['minInstances']
+      },
+      {
+        path:  'maxInstances',
+        rules: ['maxInstances']
+      },
       ],
 
     };
@@ -175,6 +185,13 @@ export default defineComponent({
           pool['_id'] = pool.nodePoolId || randomStr();
           pool['_isNew'] = this.isNew;
           pool['_validation'] = {};
+          if (!Object.hasOwn(pool, 'enableAutoScaling')) {
+            if (pool.minInstances || pool.maxInstances) {
+              pool.enableAutoScaling = true;
+            } else {
+              pool.enableAutoScaling = false;
+            }
+          }
         });
       }
       this.nodePools = this.normanCluster.aliConfig.nodePools || [];
@@ -247,6 +264,8 @@ export default defineComponent({
         poolNamesUnique:         nodePoolNamesUnique(this),
         poolCount:               nodePoolCount(this),
         instanceTypeCount:       instanceTypeCount(this),
+        minInstances:            minInstances(this),
+        maxInstances:            maxInstances(this),
       };
     },
 
@@ -605,13 +624,13 @@ export default defineComponent({
       >
         <Import
           v-model:cluster-name="config.clusterName"
-          v-model:cluster-id="config.clusterId"
           :region="config.regionId"
           :credential="config.alibabaCredentialSecret"
           :rules="{clusterName: fvGetAndReportPathRules('clusterName')}"
           :mode="mode"
           data-testid="cruack-import"
           @error="e=>errors.push(e)"
+          @update:cluster-id="(val)=>config.clusterId=val"
         />
       </Accordion>
       <div v-else>
@@ -673,7 +692,9 @@ export default defineComponent({
               :validation-rules="{
                 name: fvGetAndReportPathRules('poolName'),
                 count: fvGetAndReportPathRules('poolCount'),
-                instanceTypeCount: fvGetAndReportPathRules('instanceTypeCount')
+                instanceTypeCount: fvGetAndReportPathRules('instanceTypeCount'),
+                minInstances: fvGetAndReportPathRules('minInstances'),
+                maxInstances: fvGetAndReportPathRules('maxInstances')
               }"
               @error="e=>errors.push(e)"
             />
