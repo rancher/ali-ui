@@ -673,8 +673,8 @@ export default defineComponent({
           @addTab="addPool()"
         >
           <Tab
-            v-for="(pool, i) in nodePools"
-            :key="i"
+            v-for="(pool) in nodePools"
+            :key="pool._id"
             :name="pool._id || pool.name"
             :label="`${pool.name || t('ack.nodePool.unnamed')}`"
             :error="!poolIsValid(pool)"
