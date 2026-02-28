@@ -448,7 +448,7 @@ export default defineComponent({
     },
 
     addPool() {
-      const poolName = `nodePool-${ this.nodePools.length + 1 }`;
+      const poolName = `nodePool-${ this.nodePools.length }`;
       const _id = randomStr();
       const neu = {
         ...cloneDeep(DEFAULT_NODE_GROUP_CONFIG), name: poolName, _id, _isNew: true, version: this.config.kubernetesVersion
@@ -675,8 +675,8 @@ export default defineComponent({
           <Tab
             v-for="(pool) in nodePools"
             :key="pool._id"
-            :label="pool.name"
-            :name="`${pool.name || t('ack.nodePool.unnamed')}`"
+            :name="pool._id || pool.name"
+            :label="`${pool.name || t('ack.nodePool.unnamed')}`"
             :error="!poolIsValid(pool)"
           >
             <NodePool
