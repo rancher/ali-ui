@@ -437,7 +437,7 @@ export default defineComponent({
     },
     updateImageForNewPools() {
       this.nodePools.forEach((pool) => {
-        if (pool._isNew ) {
+        if (pool._isNew) {
           this.updateImageForPool(pool);
         }
       });
