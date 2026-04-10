@@ -126,7 +126,7 @@ function handleEnablingAutoscaling(val: boolean) {
         </RichTranslation>
       </Banner>
       <div class="row span-12">
-        <div class="col span-4">
+        <div class="col span-3">
           <LabeledInput
             v-model:value.number="value.minInstances"
             type="number"
@@ -139,7 +139,7 @@ function handleEnablingAutoscaling(val: boolean) {
             required
           />
         </div>
-        <div class="col span-4">
+        <div class="col span-3">
           <LabeledInput
             v-model:value.number="value.maxInstances"
             type="number"

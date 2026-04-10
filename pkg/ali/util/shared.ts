@@ -99,8 +99,8 @@ export const DEFAULT_NODE_GROUP_CONFIG = {
     }
   ],
   desiredSize:       3,
-  imageId:           'aliyun_3_x64_20G_alibase_20241218.vhd',
-  imageType:         'AliyunLinux3',
+  imageId:           'aliyun_4_x64_20G_container_optimized_alibase_20251106.vhd',
+  imageType:         'AliyunLinux4ContainerOptimized',
   runtime:           'containerd',
   runtimeVersion:    '1.6.38',
   vswitchIds:        [],

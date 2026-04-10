@@ -213,6 +213,11 @@ export default defineComponent({
         this.getAllInstanceTypes();
       }
     },
+    'config.kubernetesVersion'(neu) {
+      if (neu && !this.isImport) {
+        this.updateImageForNewPools();
+      }
+    }
   },
   computed: {
     ...mapGetters({ t: 'i18n/t' }),
@@ -418,6 +423,25 @@ export default defineComponent({
         (this.$refs.cruresource).emitOrRoute();
       }
     },
+    updateImageForPool(pool) {
+      const imagesForVersionUnformatted = this.allImages[this.config.kubernetesVersion] || [];
+
+      if (imagesForVersionUnformatted.length > 0) {
+        const curImageSupported = imagesForVersionUnformatted.find((image) => image.image_id === pool.imageId);
+
+        if (!curImageSupported) {
+          pool.imageId = imagesForVersionUnformatted[0].image_id;
+          pool.imageType = imagesForVersionUnformatted[0].image_type;
+        }
+      }
+    },
+    updateImageForNewPools() {
+      this.nodePools.forEach((pool) => {
+        if (pool._isNew ) {
+          this.updateImageForPool(pool);
+        }
+      });
+    },
     onMembershipUpdate(update) {
       this['membershipUpdate'] = update;
     },
@@ -454,6 +478,7 @@ export default defineComponent({
         ...cloneDeep(DEFAULT_NODE_GROUP_CONFIG), name: poolName, _id, _isNew: true, version: this.config.kubernetesVersion
       };
 
+      this.updateImageForPool(neu);
       this.nodePools.push(neu);
 
       this.$nextTick(() => {
