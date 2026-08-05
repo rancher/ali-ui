@@ -56,6 +56,6 @@
     "yaml-lint": "1.7.0",
     "yarn": "1.22.18",
     "eslint-plugin-promise": "7.2.1",
-    "@vue/eslint-config-typescript": "9.1.0"
+    "@vue/eslint-config-typescript": "14.9.0"
   }
 }
