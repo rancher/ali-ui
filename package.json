@@ -11,7 +11,7 @@
     "@rancher/shell": "3.0.10",
     "@types/lodash": "4.14.196",
     "cache-loader": "4.1.0",
-    "color": "4.2.3",
+    "color": "5.0.3",
     "core-js": "3.21.1",
     "css-loader": "6.7.3",
     "ip": "2.0.1",
