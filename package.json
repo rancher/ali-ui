@@ -9,7 +9,7 @@
   "dependencies": {
     "@rancher/shell": "3.0.13",
     "@types/lodash": "4.14.196",
-    "semver": "7.5.4",
+    "semver": "7.8.5",
     "vuex": "4.1.0"
   },
   "resolutions": {
