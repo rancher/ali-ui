@@ -29,7 +29,7 @@
     "migrate": "node ./scrips/vue-migrate.js"
   },
   "devDependencies": {
-    "@typescript-eslint/eslint-plugin": "5.62.0",
+    "@typescript-eslint/eslint-plugin": "8.68.0",
     "@typescript-eslint/parser": "5.62.0",
     "eslint": "7.32.0",
     "eslint-config-standard": "16.0.3",
