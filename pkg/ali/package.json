@@ -5,7 +5,7 @@
   "private": false,
   "rancher": {
     "annotations": {
-      "catalog.cattle.io/rancher-version": ">= 2.14.0-0",
+      "catalog.cattle.io/rancher-version": ">= 2.15.0-0",
       "catalog.cattle.io/display-name": "Alibaba Cloud (ACK) Provisioning",
       "catalog.cattle.io/ui-extensions-version": ">= 3.0.0 < 4.0.0",
       "catalog.cattle.io/certified": "rancher",
@@ -21,10 +21,9 @@
     "node": ">=24"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "5.0.8",
+    "@vue/cli-plugin-babel": "5.0.9",
     "@vue/cli-service": "5.0.8",
-    "@vue/cli-plugin-typescript": "5.0.8",
-    "@vue/eslint-config-typescript": "9.1.0"
+    "@vue/cli-plugin-typescript": "5.0.9"
   },
   "browserslist": [
     "> 1%",
