@@ -14,7 +14,7 @@
     "vuex": "4.1.0"
   },
   "resolutions": {
-    "@tootallnate/once": "^2.0.1",
+    "@tootallnate/once": "2.0.1",
     "basic-ftp": "6.2.2",
     "cookie": "0.7.2",
     "cross-spawn": "7.0.6",
