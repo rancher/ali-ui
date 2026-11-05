@@ -19,7 +19,8 @@ import AgentConfiguration from '@shell/edit/provisioning.cattle.io.cluster/tabs/
 import Import from './Import.vue';
 import NodePool from './NodePool.vue';
 import Networking from './Networking.vue';
-import ClusterMembershipEditor, { canViewClusterMembershipEditor } from '@shell/components/form/Members/ClusterMembershipEditor.vue';
+import ClusterMembershipEditor from '@shell/components/form/Members/ClusterMembershipEditor.vue';
+import { useClusterMembership, saveRoleBindings } from '@shell/composables/useClusterMembership';
 import cloneDeep from 'lodash/cloneDeep';
 import { NORMAN, MANAGEMENT } from '@shell/config/types';
 import { removeObject } from '@shell/utils/array';
@@ -78,6 +79,10 @@ export default defineComponent({
 
   mixins: [CreateEditView, FormValidation],
 
+  setup() {
+    return useClusterMembership();
+  },
+
   props: {
     mode: {
       type:    String,
@@ -95,7 +100,6 @@ export default defineComponent({
       normanCluster:          { name: '', aliConfig: {} },
       originalVersion:        '',
       nodePools:              [],
-      membershipUpdate:       {},
       locationOptions:        [],
       allVersions:            [],
       allImages:              {},
@@ -277,9 +281,6 @@ export default defineComponent({
     hasCredential() {
       return !!this.config?.alibabaCredentialSecret;
     },
-    canManageMembers() {
-      return canViewClusterMembershipEditor(this.$store);
-    },
     config: {
       get() {
         return this.normanCluster.aliConfig;
@@ -442,13 +443,8 @@ export default defineComponent({
         }
       });
     },
-    onMembershipUpdate(update) {
-      this['membershipUpdate'] = update;
-    },
     async saveRoleBindings() {
-      if (this.membershipUpdate.save) {
-        await this.membershipUpdate.save(this.normanCluster.id);
-      }
+      return saveRoleBindings(this.membershipUpdate, this.normanCluster.id);
     },
     async actuallySave() {
       await this.normanCluster.save();
@@ -740,6 +736,7 @@ export default defineComponent({
           v-if="canManageMembers"
           :mode="mode"
           :parent-id="normanCluster.id ? normanCluster.id : null"
+          :pending-update="membershipUpdate"
           @membership-update="onMembershipUpdate"
         />
       </Accordion>
