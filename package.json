@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@rancher/shell": "3.0.15-rc.4",
-    "@types/lodash": "4.17.25",
+    "@types/lodash": "4.17.27",
     "ipaddr.js": "2.4.0",
     "semver": "7.8.5",
     "vuex": "4.1.0"
